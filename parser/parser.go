@@ -1,7 +1,8 @@
 package parser
 
-import "fmt"
+type Parser struct {
+	source string
+}
 
-func Parser() {
-	fmt.Println("Parsing ...")
+func NewParser() {
 }

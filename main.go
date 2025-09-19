@@ -2,10 +2,17 @@ package main
 
 import (
 	"curgo/parser"
-	"fmt"
+	"os"
 )
 
 func main() {
-	fmt.Println("Hello")
-	parser.Parser()
+	parser.NewParser()
+	initCommands()
+}
+
+func initCommands() {
+	ch := NewCommandHandler()
+	ch.fs.Parse(os.Args[1:])
+	ch.createFileFn()
+	ch.initFn()
 }
