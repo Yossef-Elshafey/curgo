@@ -1,18 +1,18 @@
 package main
 
 import (
-	"curgo/parser"
+	"curgo/commands"
 	"os"
 )
 
 func main() {
-	parser.NewParser()
 	initCommands()
 }
 
 func initCommands() {
-	ch := NewCommandHandler()
-	ch.fs.Parse(os.Args[1:])
-	ch.createFileFn()
-	ch.initFn()
+	ch := commands.NewCommandHandler()
+	ch.Fs.Parse(os.Args[1:])
+	ch.CreateFileFn()
+	ch.InitFn()
+	ch.ExecuteFn()
 }
