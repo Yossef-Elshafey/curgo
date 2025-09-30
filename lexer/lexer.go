@@ -25,10 +25,8 @@ func NewLexer(source string) *lexer {
 	return &lexer{
 		handlers: []handlers{
 			{regex: regexp.MustCompile(`^global`), token: GLOBAL},
-			{regex: regexp.MustCompile(`^\w.+\{(.+\s?)$`), token: OPEN_PAREN},
-			{regex: regexp.MustCompile(`^local`), token: LOCAL},
-			{regex: regexp.MustCompile(`^set`), token: SET},
-			{regex: regexp.MustCompile(`\}`), token: CLOSE_PAREN},
+			// {regex: regexp.MustCompile(`^\w.+\{(.+\s?)$`), token: OPEN_PAREN},
+			{regex: regexp.MustCompile(`^<>$`), token: CLOSURE_START},
 		},
 		source: strings.Split(source, "\n"),
 		pos:    0,
@@ -39,7 +37,6 @@ func NewLexer(source string) *lexer {
 
 func (l *lexer) Tokenize() {
 	for _, line := range l.source {
-		fmt.Printf("Currently processing line %s\n", line)
 		l.searchForPattern(line)
 	}
 }
@@ -49,7 +46,7 @@ func (l *lexer) searchForPattern(line string) {
 	// at l.gates, if a gate was open (l.gates.HasValue)
 	// it passes the next iteration line to whatever gate matched with the last pushed value
 	for _, pattern := range l.handlers {
-		if matched := pattern.regex.FindStringIndex(line); matched != nil {
+		if matched := pattern.regex.MatchString(line); matched {
 			fmt.Printf("Line:%s has a match\n", line)
 			l.gates.Put(pattern.token)
 			return
@@ -65,10 +62,10 @@ func (l *lexer) sendLineToGate(line string) {
 	switch l.gates.GetLastValue() {
 	case GLOBAL:
 		l.gateAcknowledge(l.Ast.Global.IsChild(line), GLOBAL)
-	case OPEN_PAREN:
-		l.gateAcknowledge(openClosureHandler(line), OPEN_PAREN)
-	case LOCAL:
-		l.gateAcknowledge(localHandler(line), LOCAL)
+	case CLOSURE_START:
+		l.gateAcknowledge(l.Ast.Closure.IsChild(line), CLOSURE_START)
+	case CLOSURE_END:
+		l.gates.Delete(CLOSURE_START)
 	}
 }
 
@@ -76,20 +73,4 @@ func (l *lexer) gateAcknowledge(acknowledge bool, token TokenKind) {
 	if !acknowledge {
 		l.gates.Delete(token)
 	}
-}
-
-func openClosureHandler(line string) bool {
-	if line == "" {
-		return true
-	}
-	fmt.Printf("openClosure recived %v\n", line)
-	return false
-}
-
-func localHandler(line string) bool {
-	if line == "" {
-		return true
-	}
-	fmt.Printf("localhandeler recived %s\n", line)
-	return true
 }

@@ -1,6 +1,7 @@
 package ast
 
 import (
+	"fmt"
 	"strings"
 )
 
@@ -25,4 +26,12 @@ func (g *Global) IsChild(line string) bool {
 		}
 	}
 	return matched
+}
+
+func (g *Global) PrintGlobal() {
+	current := g.assignment.variables
+	for current != nil {
+		fmt.Printf("Variable: %s, Value: %v\n", current.literal, current.value)
+		current = current.next
+	}
 }
