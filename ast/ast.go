@@ -10,18 +10,6 @@ import (
 	"strings"
 )
 
-/*
-THIS IS SICK; since parsing by what should be there and what shouldn't is not the best but its the fasted to go with
-there has some parsing and simple interpretation to avoid lack of flexibility and appropiate errors
-TODO: pratt parsing of each tiny token
-TODO: simple interpreter that is capable of the following
-			bit operations
-			real assignments
-			syntax determination
-			assignment handling for statements and exper
-TODO: build an AST which in not that powerful for higher precedence but easy to move with for simple operations and assignments
-*/
-
 type Ast struct {
 	Global  Global
 	Closure Closure
@@ -66,10 +54,15 @@ func (a *Ast) Interpret() {
 			log.Fatalf("Command failed with error: %v\nStderr: %s", err, stderr.String())
 		}
 
-		output := stdout.String()
+		output := stdout.Bytes()
 		var out bytes.Buffer
-		err = json.Indent(&out, []byte(output), "", "  ")
-		fmt.Printf("%s\n", out.Bytes())
+		err = json.Indent(&out, output, "", "  ")
+		if err != nil {
+			fmt.Println(string(output))
+		} else {
+			fmt.Printf("%s\n", out.Bytes())
+
+		}
 		fmt.Println(strings.Repeat("-", 20))
 	}
 }

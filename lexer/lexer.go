@@ -41,9 +41,6 @@ func (l *lexer) Tokenize() {
 }
 
 func (l *lexer) searchForPattern(line string) {
-	// check for higher precedence patterns if founded it puts the token
-	// at l.gates, if a gate was open (l.gates.HasValue)
-	// it passes the next iteration line to whatever gate matched with the last pushed value
 	for _, pattern := range l.handlers {
 		if matched := pattern.regex.MatchString(line); matched {
 			l.gate = pattern.token

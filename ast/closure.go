@@ -27,7 +27,6 @@ type Closure struct {
 	global     Global
 }
 
-// Currently :TODO: implement handlers, implement communications between closure and AST
 func NewClosure() Closure {
 	return Closure{
 		patterns: []pattern{
@@ -54,9 +53,15 @@ func (c *Closure) handleMutliLineAssign(line string) {
 		pairs := strings.Split(line, "=")
 		c.assignment.createNewAssignment(pairs[0], pairs[1])
 	} else {
+		if len(line) == 1 {
+			fmt.Printf("Missing semi colon for variable declaration\n")
+			os.Exit(1)
+		}
+
 		if string(line[len(line)-1]) == ";" {
 			line = line[0 : len(line)-1]
 		}
+
 		c.assignment.modfiyLastAddedLiteral(line)
 	}
 }
