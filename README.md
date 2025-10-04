@@ -20,4 +20,4 @@ go build .
 ./curgo -h
 ```
 
-program creates direcoty with [ init ] reads the file points to with -f
+program creates directory with [ init ] reads the file points to with -f
