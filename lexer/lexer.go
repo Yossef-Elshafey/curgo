@@ -33,11 +33,11 @@ func NewLexer(source string) *lexer {
 	}
 }
 
-func (l *lexer) Tokenize() {
+func (l *lexer) Tokenize(block int) {
 	for _, line := range l.source {
 		l.searchForPattern(line)
 	}
-	l.Ast.Interpret()
+	l.Ast.Interpret(block)
 }
 
 func (l *lexer) searchForPattern(line string) {

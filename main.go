@@ -14,5 +14,6 @@ func initCommands() {
 	ch.Fs.Parse(os.Args[1:])
 	ch.CreateFileFn()
 	ch.InitFn()
-	ch.ExecuteFn()
+	ch.ExecuteFullFile()
+	ch.ExecuteBlock()
 }

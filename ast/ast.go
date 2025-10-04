@@ -38,31 +38,49 @@ func (a *Ast) acessOrFail(assignments map[string]string, key string) string {
 	return value
 }
 
-func (a *Ast) Interpret() {
-	for _, assignments := range a.body {
-		command := a.acessOrFail(assignments, "curl")
-		name := a.acessOrFail(assignments, "for")
-		fmt.Printf("%s\n", name)
-		cmd := exec.Command("bash", "-c", command)
+func (a *Ast) process(i int) {
+	closure := a.body[i]
 
-		var stdout, stderr bytes.Buffer
-		cmd.Stdout = &stdout
-		cmd.Stderr = &stderr
+	command := a.acessOrFail(closure, "curl")
+	name := a.acessOrFail(closure, "for")
 
-		err := cmd.Run()
-		if err != nil {
-			log.Fatalf("Command failed with error: %v\nStderr: %s", err, stderr.String())
+	fmt.Println(strings.Repeat("-", 80))
+	fmt.Printf("%s Response:\n", name)
+
+	cmd := exec.Command("bash", "-c", command)
+
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	err := cmd.Run()
+	if err != nil {
+		log.Fatalf("Command failed with error: %v\nStderr: %s", err, stderr.String())
+	}
+
+	output := stdout.Bytes()
+	var out bytes.Buffer
+	err = json.Indent(&out, output, "", "  ")
+	if err != nil {
+		fmt.Println(string(output))
+	} else {
+		fmt.Printf("%s\n", out.Bytes())
+	}
+	fmt.Println(strings.Repeat("-", 80))
+	fmt.Println()
+}
+
+func (a *Ast) Interpret(block int) {
+	if block > len(a.body) {
+		fmt.Printf("Out of range: %d\n", block)
+		os.Exit(1)
+	}
+
+	if block == -1 {
+		for i, _ := range a.body {
+			a.process(i)
 		}
-
-		output := stdout.Bytes()
-		var out bytes.Buffer
-		err = json.Indent(&out, output, "", "  ")
-		if err != nil {
-			fmt.Println(string(output))
-		} else {
-			fmt.Printf("%s\n", out.Bytes())
-
-		}
-		fmt.Println(strings.Repeat("-", 20))
+	} else {
+		a.process(block - 1)
 	}
 }
