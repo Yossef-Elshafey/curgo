@@ -1,19 +1,19 @@
 package main
 
 import (
-	"curgo/commands"
+	"log"
 	"os"
+	"parser/lexer"
+	"parser/parser"
 )
 
 func main() {
-	initCommands()
-}
+	bytes, err := os.ReadFile("./examples/parser.txt")
+	if err != nil {
+		log.Fatalf("Error: cannot open file")
+	}
+	source := string(bytes)
+	tokens := lexer.Tokenize(source)
 
-func initCommands() {
-	ch := commands.NewCommandHandler()
-	ch.Fs.Parse(os.Args[1:])
-	ch.CreateFileFn()
-	ch.InitFn()
-	ch.ExecuteFullFile()
-	ch.ExecuteBlock()
+	ast := parser.Parse(tokens)
 }
