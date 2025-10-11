@@ -1,9 +1,9 @@
 package parser
 
 import (
+	"curgo/ast"
+	"curgo/lexer"
 	"log"
-	"parser/ast"
-	"parser/lexer"
 	"strconv"
 )
 

@@ -1,10 +1,11 @@
 package main
 
 import (
+	"curgo/lexer"
+	"curgo/parser"
+	"fmt"
 	"log"
 	"os"
-	"parser/lexer"
-	"parser/parser"
 )
 
 func main() {
@@ -16,4 +17,5 @@ func main() {
 	tokens := lexer.Tokenize(source)
 
 	ast := parser.Parse(tokens)
+	fmt.Printf("%+v\n", ast)
 }

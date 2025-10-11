@@ -1,3 +1,3 @@
-module parser
+module curgo
 
 go 1.24.4

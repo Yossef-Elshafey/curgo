@@ -1,6 +1,6 @@
 package ast
 
-import "parser/lexer"
+import "curgo/lexer"
 
 type NumberExpr struct {
 	Value float64

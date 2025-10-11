@@ -1,8 +1,8 @@
 package parser
 
 import (
-	"parser/ast"
-	"parser/lexer"
+	"curgo/ast"
+	"curgo/lexer"
 )
 
 func parseStmt(p *parser) ast.Stmt {

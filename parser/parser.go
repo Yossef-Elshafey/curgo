@@ -2,9 +2,9 @@ package parser
 
 import (
 	// "go/ast" // NOTE:
+	"curgo/ast"
+	"curgo/lexer"
 	"log"
-	"parser/ast"
-	"parser/lexer"
 )
 
 type parser struct {
