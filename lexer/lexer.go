@@ -21,6 +21,7 @@ type lexer struct {
 }
 
 func Tokenize(source string) []Token {
+	// TODO: Stream tokens to the parser immediately
 	lex := createLexer(source)
 	for !lex.isEOF() {
 		matched := false
@@ -39,7 +40,6 @@ func Tokenize(source string) []Token {
 	}
 
 	lex.push(NewToken(EOF, "EOF"))
-
 	return lex.Tokens
 }
 

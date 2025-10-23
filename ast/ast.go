@@ -104,3 +104,12 @@ func (es *ExpressionStatement) Stringify() string {
 	}
 	return ""
 }
+
+type IntegerLiteral struct {
+	Token lexer.Token
+	Value int64
+}
+
+func (il *IntegerLiteral) expressionNode()      {}
+func (il *IntegerLiteral) TokenLiteral() string { return il.Token.Value }
+func (il *IntegerLiteral) Stringify() string    { return il.Token.Value }

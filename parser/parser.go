@@ -4,14 +4,35 @@ import (
 	"curgo/ast"
 	"curgo/lexer"
 	"fmt"
+	"strconv"
+)
+
+type (
+	prefixParseFn func() ast.Expression
+	infixParseFn  func(ast.Expression) ast.Expression
+)
+
+type bindingPower int
+
+const (
+	_ bindingPower = iota
+	LOWEST
+	EQUALS
+	LESSGREATER
+	SUM
+	PRODUCT
+	PREFIX
+	CALL
 )
 
 type Parser struct {
-	l         []lexer.Token
-	curToken  lexer.Token
-	peekToken lexer.Token
-	pos       int
-	errors    []string
+	l              []lexer.Token
+	curToken       lexer.Token
+	peekToken      lexer.Token
+	pos            int
+	errors         []string
+	prefixParseFns map[lexer.TokenKind]prefixParseFn
+	infixParseFns  map[lexer.TokenKind]infixParseFn
 }
 
 func New(l []lexer.Token) *Parser {
@@ -23,7 +44,18 @@ func New(l []lexer.Token) *Parser {
 	// set the two token pointers appropriately
 	p.nextToken()
 	p.nextToken()
+	p.prefixParseFns = make(map[lexer.TokenKind]prefixParseFn)
+	p.registerPrefix(lexer.IDENTIFIER, p.parseIdentifier)
+	p.registerPrefix(lexer.NUMBER, p.parseIntegerLiteral)
 	return p
+}
+
+func (p *Parser) registerPrefix(kind lexer.TokenKind, fn prefixParseFn) {
+	p.prefixParseFns[kind] = fn
+}
+
+func (p *Parser) registerInfix(kind lexer.TokenKind, fn infixParseFn) {
+	p.infixParseFns[kind] = fn
 }
 
 func (p *Parser) Errors() []string {
@@ -73,6 +105,23 @@ func (p *Parser) ParseProgram() *ast.Program {
 		p.nextToken()
 	}
 	return program
+
+}
+
+func (p *Parser) parseIdentifier() ast.Expression {
+	return &ast.Identifier{Token: p.curToken, Value: p.curToken.Value}
+}
+
+func (p *Parser) parseIntegerLiteral() ast.Expression {
+	lit := &ast.IntegerLiteral{Token: p.curToken}
+	value, err := strconv.ParseInt(p.curToken.Value, 0, 64)
+	if err != nil {
+		msg := fmt.Sprintf("could not parse %q as integer", p.curToken.Value)
+		p.errors = append(p.errors, msg)
+		return nil
+	}
+	lit.Value = value
+	return lit
 }
 
 func (p *Parser) parseStatement() ast.Statement {
@@ -82,8 +131,28 @@ func (p *Parser) parseStatement() ast.Statement {
 	case lexer.RETURN:
 		return p.parserReturnStatement()
 	default:
+		return p.parseExpressionStatment()
+	}
+}
+
+func (p *Parser) parseExpressionStatment() *ast.ExpressionStatement {
+	stmt := &ast.ExpressionStatement{Token: p.curToken}
+	stmt.Expression = p.parseExpression(LOWEST)
+	if p.PeekTokenIs(lexer.SEMI_COLON) {
+		p.nextToken()
+	}
+	// TODO: else throw error
+	return stmt
+}
+
+func (p *Parser) parseExpression(bp bindingPower) ast.Expression {
+	prefix := p.prefixParseFns[p.curToken.Type]
+	if prefix == nil {
 		return nil
 	}
+
+	leftExp := prefix()
+	return leftExp
 }
 
 func (p *Parser) parserReturnStatement() *ast.ReturnStatement {

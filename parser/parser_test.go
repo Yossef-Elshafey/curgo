@@ -39,6 +39,33 @@ func TestLetStatement(t *testing.T) {
 	}
 }
 
+func TestIntegerLiteralExpression(t *testing.T) {
+	input := "5;"
+	l := lexer.Tokenize(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParseErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("Program statements error. got=%d", len(program.Statements))
+	}
+	stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("exp not *ast.IntegerLiteral. got=%T", program.Statements[0])
+	}
+	literal, ok := stmt.Expression.(*ast.IntegerLiteral)
+	if !ok {
+		t.Fatalf("exp not *ast.IntegerLiteral. got=%T", stmt.Expression)
+	}
+	if literal.Value != 5 {
+		t.Errorf("IntegerLiteral.Value is not '5'. got=%d", literal.Value)
+	}
+
+	if literal.TokenLiteral() != "5" {
+		t.Errorf("IntegerLiteral.TokenLiteral() is not '5'. got=%d", literal.Value)
+	}
+}
+
 func TestReturnStatements(t *testing.T) {
 	inp := `
 	return 5;
@@ -64,6 +91,32 @@ func TestReturnStatements(t *testing.T) {
 	}
 }
 
+func TestIdentifierExpression(t *testing.T) {
+	input := "foobar;"
+	l := lexer.Tokenize(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParseErrors(t, p)
+	if len(program.Statements) != 1 {
+		t.Fatalf("Program parsed incorrectly. got=%d", len(program.Statements))
+	}
+	stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("program.statements[0] cannot be casted to ExpressionStatement. got=%T",
+			program.Statements[0])
+	}
+	ident, ok := stmt.Expression.(*ast.Identifier)
+	if !ok {
+		t.Fatalf("stmt.Expression cannot be casted to Identifier. got=%T",
+			ident)
+	}
+	if ident.Value != "foobar" {
+		t.Errorf("ident.Value not %s. got=%s", "foobar", ident.Value)
+	}
+	if ident.TokenLiteral() != "foobar" {
+		t.Errorf("ident.TokenLiteral() not %s. got=%s", "foobar", ident.Value)
+	}
+}
 func checkParseErrors(t *testing.T, p *Parser) {
 	errors := p.Errors()
 	if len(errors) == 0 {
