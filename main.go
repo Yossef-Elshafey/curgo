@@ -13,9 +13,9 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error: cannot open file")
 	}
+
 	source := string(bytes)
 	tokens := lexer.Tokenize(source)
-
-	ast := parser.Parse(tokens)
-	fmt.Printf("%+v\n", ast)
+	p := parser.New(tokens)
+	fmt.Printf("%+v\n", p)
 }

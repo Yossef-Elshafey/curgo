@@ -73,6 +73,7 @@ const (
 	EXPORT
 	TYPEOF
 	IN
+	RETURN
 
 	NUM_TOKENS
 )
@@ -82,6 +83,7 @@ var reserved_lu map[string]TokenKind = map[string]TokenKind{
 	"const":   CONST,
 	"import":  IMPORT,
 	"foreach": FOREACH,
+	"return":  RETURN,
 }
 
 func NewToken(kind TokenKind, value string) Token {
@@ -96,6 +98,8 @@ func TokenKindString(kind TokenKind) string {
 	switch kind {
 	case EOF:
 		return "eof"
+	case RETURN:
+		return "return"
 	case NULL:
 		return "null"
 	case NUMBER:
