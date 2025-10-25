@@ -18,12 +18,24 @@ const (
 	_ bindingPower = iota
 	LOWEST
 	EQUALS
+	NOT_EQUALS
 	LESSGREATER
 	SUM
 	PRODUCT
 	PREFIX
 	CALL
 )
+
+var bindingPowerLookup = map[lexer.TokenKind]bindingPower{
+	lexer.EQUALS:     EQUALS,
+	lexer.NOT_EQUALS: NOT_EQUALS,
+	lexer.LESS:       LESSGREATER,
+	lexer.GREATER:    LESSGREATER,
+	lexer.PLUS:       SUM,
+	lexer.DASH:       SUM,
+	lexer.SLASH:      PRODUCT,
+	lexer.STAR:       PRODUCT,
+}
 
 type Parser struct {
 	l              []lexer.Token
@@ -44,14 +56,47 @@ func New(l []lexer.Token) *Parser {
 	// set the two token pointers appropriately
 	p.nextToken()
 	p.nextToken()
+	p.initPrefix()
+	p.initInfix()
+	return p
+}
+
+func (p *Parser) initPrefix() {
 	p.prefixParseFns = make(map[lexer.TokenKind]prefixParseFn)
 	p.registerPrefix(lexer.IDENTIFIER, p.parseIdentifier)
 	p.registerPrefix(lexer.NUMBER, p.parseIntegerLiteral)
-	return p
+	p.registerPrefix(lexer.NOT, p.parsePrefixExpression)
+	p.registerPrefix(lexer.DASH, p.parsePrefixExpression)
+}
+
+func (p *Parser) initInfix() {
+	p.infixParseFns = make(map[lexer.TokenKind]infixParseFn)
+	p.registerInfix(lexer.PLUS, p.parseBinaryExpression)
+	p.registerInfix(lexer.MINUS_MINUS, p.parseBinaryExpression)
+	p.registerInfix(lexer.SLASH, p.parseBinaryExpression)
+	p.registerInfix(lexer.STAR, p.parseBinaryExpression)
+	p.registerInfix(lexer.EQUALS, p.parseBinaryExpression)
+	p.registerInfix(lexer.NOT_EQUALS, p.parseBinaryExpression)
+	p.registerInfix(lexer.LESS, p.parseBinaryExpression)
+	p.registerInfix(lexer.GREATER, p.parseBinaryExpression)
 }
 
 func (p *Parser) registerPrefix(kind lexer.TokenKind, fn prefixParseFn) {
 	p.prefixParseFns[kind] = fn
+}
+
+func (p *Parser) peekBindingPower() bindingPower {
+	if p, ok := bindingPowerLookup[p.peekToken.Type]; ok {
+		return p
+	}
+	return LOWEST
+}
+
+func (p *Parser) currentBindingPower() bindingPower {
+	if p, ok := bindingPowerLookup[p.peekToken.Type]; ok {
+		return p
+	}
+	return LOWEST
 }
 
 func (p *Parser) registerInfix(kind lexer.TokenKind, fn infixParseFn) {
@@ -69,11 +114,13 @@ func (p *Parser) PeekError(t lexer.TokenKind) {
 }
 
 func (p *Parser) nextToken() {
+	fmt.Printf("Got call To Advance Tokens. before\n Current:%+v, Peek:%+v\n", p.curToken, p.peekToken)
 	p.curToken = p.peekToken
 	p.peekToken = p.l[p.pos]
 	if p.pos+1 != len(p.l) {
 		p.pos++
 	}
+	fmt.Printf("After\n Current:%+v, Peek:%+v\n", p.curToken, p.peekToken)
 }
 
 func (p *Parser) curTokenIs(t lexer.TokenKind) bool {
@@ -97,6 +144,7 @@ func (p *Parser) expectPeek(t lexer.TokenKind) bool {
 func (p *Parser) ParseProgram() *ast.Program {
 	program := &ast.Program{}
 	program.Statements = []ast.Statement{}
+	fmt.Printf("Parsing Tokens: %+v\n", p.l)
 	for p.curToken.Type != lexer.EOF {
 		stmt := p.parseStatement()
 		if stmt != nil {
@@ -105,7 +153,34 @@ func (p *Parser) ParseProgram() *ast.Program {
 		p.nextToken()
 	}
 	return program
+}
 
+func (p *Parser) parseBinaryExpression(left ast.Expression) ast.Expression {
+	exp := &ast.BinaryExpression{
+		Token:    p.curToken,
+		Operator: p.curToken.Value,
+		Left:     left,
+	}
+	bp := p.currentBindingPower()
+	p.nextToken()
+	exp.Right = p.parseExpression(bp)
+	return exp
+}
+
+func (p *Parser) parsePrefixExpression() ast.Expression {
+	exp := &ast.UnaryExpression{
+		Token:    p.curToken,
+		Operator: p.curToken.Value,
+	}
+	p.nextToken()
+	fmt.Printf("Current Token after parsePrefixExpression advance: %+v\n", p.curToken)
+	exp.Right = p.parseExpression(PREFIX)
+	return exp
+}
+
+func (p *Parser) noPrefixParseFnError(t lexer.TokenKind) {
+	msg := fmt.Sprintf("no prefix parse function for %s found", lexer.TokenKindString(t))
+	p.errors = append(p.errors, msg)
 }
 
 func (p *Parser) parseIdentifier() ast.Expression {
@@ -148,6 +223,7 @@ func (p *Parser) parseExpressionStatment() *ast.ExpressionStatement {
 func (p *Parser) parseExpression(bp bindingPower) ast.Expression {
 	prefix := p.prefixParseFns[p.curToken.Type]
 	if prefix == nil {
+		p.noPrefixParseFnError(p.curToken.Type)
 		return nil
 	}
 

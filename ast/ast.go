@@ -8,6 +8,7 @@ import (
 type Node interface {
 	TokenLiteral() string
 	Stringify() string
+	// Visitor()
 }
 
 type Statement interface {
@@ -113,3 +114,39 @@ type IntegerLiteral struct {
 func (il *IntegerLiteral) expressionNode()      {}
 func (il *IntegerLiteral) TokenLiteral() string { return il.Token.Value }
 func (il *IntegerLiteral) Stringify() string    { return il.Token.Value }
+
+type UnaryExpression struct {
+	Token    lexer.Token
+	Operator string
+	Right    Expression
+}
+
+func (ue *UnaryExpression) expressionNode()      {}
+func (ue *UnaryExpression) TokenLiteral() string { return ue.Token.Value }
+func (ue *UnaryExpression) Stringify() string {
+	var out bytes.Buffer
+	out.WriteString("(")
+	out.WriteString(ue.Operator)
+	out.WriteString(ue.Right.Stringify())
+	out.WriteString(")")
+	return out.String()
+}
+
+type BinaryExpression struct {
+	Token    lexer.Token
+	Left     Expression
+	Operator string
+	Right    Expression
+}
+
+func (be *BinaryExpression) expressionNode()      {}
+func (be *BinaryExpression) TokenLiteral() string { return be.Token.Value }
+func (be *BinaryExpression) Stringify() string {
+	var out bytes.Buffer
+	out.WriteString("(")
+	out.WriteString(be.Left.Stringify())
+	out.WriteString(" " + be.Operator + " ")
+	out.WriteString(be.Right.Stringify())
+	out.WriteString(")")
+	return out.String()
+}

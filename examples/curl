@@ -1,0 +1,34 @@
+type ExpectGetUser interface {
+  id string
+  password string
+  role string
+}
+
+global id;
+global avatar;
+
+function GetUser() {
+  let body = {}
+
+  call(
+    curl.Content_Type = "application/json"
+    curl.method = "POST"
+    curl.body = body
+    curl.urlEncode = "asdasdds"
+    curl.host = "localhost:3000"
+  )
+
+  if call.status == 200 {
+    print(call)
+  }
+
+  if eval(call).with(ExpectGetUser) {
+      id = call.id
+  }
+}
+
+function UpdateUser() {
+  call(
+    curl.host = "localhost:3000/$(id)"
+  )
+}
