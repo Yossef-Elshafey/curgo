@@ -72,9 +72,9 @@ func (p *Parser) initPrefix() {
 func (p *Parser) initInfix() {
 	p.infixParseFns = make(map[lexer.TokenKind]infixParseFn)
 	p.registerInfix(lexer.PLUS, p.parseBinaryExpression)
-	p.registerInfix(lexer.MINUS_MINUS, p.parseBinaryExpression)
-	p.registerInfix(lexer.SLASH, p.parseBinaryExpression)
+	p.registerInfix(lexer.DASH, p.parseBinaryExpression)
 	p.registerInfix(lexer.STAR, p.parseBinaryExpression)
+	p.registerInfix(lexer.SLASH, p.parseBinaryExpression)
 	p.registerInfix(lexer.EQUALS, p.parseBinaryExpression)
 	p.registerInfix(lexer.NOT_EQUALS, p.parseBinaryExpression)
 	p.registerInfix(lexer.LESS, p.parseBinaryExpression)
@@ -93,7 +93,7 @@ func (p *Parser) peekBindingPower() bindingPower {
 }
 
 func (p *Parser) currentBindingPower() bindingPower {
-	if p, ok := bindingPowerLookup[p.peekToken.Type]; ok {
+	if p, ok := bindingPowerLookup[p.curToken.Type]; ok {
 		return p
 	}
 	return LOWEST
@@ -114,13 +114,11 @@ func (p *Parser) PeekError(t lexer.TokenKind) {
 }
 
 func (p *Parser) nextToken() {
-	fmt.Printf("Got call To Advance Tokens. before\n Current:%+v, Peek:%+v\n", p.curToken, p.peekToken)
 	p.curToken = p.peekToken
 	p.peekToken = p.l[p.pos]
 	if p.pos+1 != len(p.l) {
 		p.pos++
 	}
-	fmt.Printf("After\n Current:%+v, Peek:%+v\n", p.curToken, p.peekToken)
 }
 
 func (p *Parser) curTokenIs(t lexer.TokenKind) bool {
@@ -144,7 +142,6 @@ func (p *Parser) expectPeek(t lexer.TokenKind) bool {
 func (p *Parser) ParseProgram() *ast.Program {
 	program := &ast.Program{}
 	program.Statements = []ast.Statement{}
-	fmt.Printf("Parsing Tokens: %+v\n", p.l)
 	for p.curToken.Type != lexer.EOF {
 		stmt := p.parseStatement()
 		if stmt != nil {
@@ -173,7 +170,6 @@ func (p *Parser) parsePrefixExpression() ast.Expression {
 		Operator: p.curToken.Value,
 	}
 	p.nextToken()
-	fmt.Printf("Current Token after parsePrefixExpression advance: %+v\n", p.curToken)
 	exp.Right = p.parseExpression(PREFIX)
 	return exp
 }
@@ -212,7 +208,7 @@ func (p *Parser) parseStatement() ast.Statement {
 
 func (p *Parser) parseExpressionStatment() *ast.ExpressionStatement {
 	stmt := &ast.ExpressionStatement{Token: p.curToken}
-	stmt.Expression = p.parseExpression(LOWEST)
+	stmt.Expression = p.parseExpression(LOWEST) // entry binding power
 	if p.PeekTokenIs(lexer.SEMI_COLON) {
 		p.nextToken()
 	}
@@ -227,7 +223,16 @@ func (p *Parser) parseExpression(bp bindingPower) ast.Expression {
 		return nil
 	}
 
-	leftExp := prefix()
+	leftExp := prefix() // lhs
+
+	for !p.PeekTokenIs(lexer.SEMI_COLON) && bp < p.peekBindingPower() {
+		infix := p.infixParseFns[p.peekToken.Type]
+		if infix == nil {
+			return leftExp
+		}
+		p.nextToken()
+		leftExp = infix(leftExp)
+	}
 	return leftExp
 }
 

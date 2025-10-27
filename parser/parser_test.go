@@ -136,6 +136,79 @@ func TestParsingInfixExpression(t *testing.T) {
 	}
 }
 
+func TestOperatorBindingPowers(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{
+			"-a * b",
+			"((-a) * b)",
+		},
+		{
+			"!-a",
+			"(!(-a))",
+		},
+		{
+			"a + b + c",
+			"((a + b) + c)",
+		},
+		{
+			"a + b - c",
+			"((a + b) - c)",
+		},
+		{
+			"a * b * c",
+			"((a * b) * c)",
+		},
+		{
+			"a * b / c",
+			"((a * b) / c)",
+		},
+		{
+			"a + b / c",
+			"(a + (b / c))",
+		},
+		{
+			"a + b * c + d / e - f",
+			"(((a + (b * c)) + (d / e)) - f)",
+		},
+		{
+			"3 + 4; -5 * 5",
+			"(3 + 4)((-5) * 5)",
+		},
+		{
+			"5 > 4 == 3 < 4",
+			"((5 > 4) == (3 < 4))",
+		},
+		{
+			"5 < 4 != 3 > 4",
+			"((5 < 4) != (3 > 4))",
+		},
+		{
+			"3 + 4 * 5 == 3 * 1 + 4 * 5",
+			"((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))",
+		},
+		{
+			"3 + 4 * 5 == 3 * 1 + 4 * 5",
+			"((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))",
+		},
+	}
+	for _, tt := range tests {
+		l := lexer.Tokenize(tt.input)
+		p := New(l)
+		program := p.ParseProgram()
+		for _, token := range l {
+			fmt.Printf("TokenKind: %s, Value: %s\n", lexer.TokenKindString(token.Type), token.Value)
+		}
+		checkParseErrors(t, p)
+		actual := program.Stringify()
+		if actual != tt.expected {
+			t.Errorf("BP Error: expected=%q, got=%q", tt.expected, actual)
+		}
+	}
+}
+
 func TestParsingPrefixExpressions(t *testing.T) {
 	prefixTests := []struct {
 		input        string
@@ -147,7 +220,6 @@ func TestParsingPrefixExpressions(t *testing.T) {
 	}
 
 	for _, tt := range prefixTests {
-		fmt.Printf("Parsing Input: %+v\n", tt.input)
 		l := lexer.Tokenize(tt.input)
 		p := New(l)
 		program := p.ParseProgram()

@@ -103,7 +103,6 @@ func multiLineStringHandler(lex *lexer, regex *regexp.Regexp) {
 
 func createLexer(source string) *lexer {
 	return &lexer{
-		//  NOTE: order matter
 		patterns: []regexPattern{
 			{regexp.MustCompile(`[a-zA-Z_][a-zA-Z0-9_]*`), symbolHandler},
 			{regexp.MustCompile(`"[^"].*"`), stringHandler},
