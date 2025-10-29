@@ -198,9 +198,6 @@ func TestOperatorBindingPowers(t *testing.T) {
 		l := lexer.Tokenize(tt.input)
 		p := New(l)
 		program := p.ParseProgram()
-		for _, token := range l {
-			fmt.Printf("TokenKind: %s, Value: %s\n", lexer.TokenKindString(token.Type), token.Value)
-		}
 		checkParseErrors(t, p)
 		actual := program.Stringify()
 		if actual != tt.expected {
