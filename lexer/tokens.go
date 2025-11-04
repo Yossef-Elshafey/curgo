@@ -84,6 +84,11 @@ var reserved_lu map[string]TokenKind = map[string]TokenKind{
 	"import":  IMPORT,
 	"foreach": FOREACH,
 	"return":  RETURN,
+	"if":      IF,
+	"else":    ELSE,
+	"fn":      FN,
+	"true":    TRUE,
+	"false":   FALSE,
 }
 
 func NewToken(kind TokenKind, value string) Token {

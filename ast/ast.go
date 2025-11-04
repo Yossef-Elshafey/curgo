@@ -3,6 +3,7 @@ package ast
 import (
 	"bytes"
 	"curgo/lexer"
+	"strings"
 )
 
 type Node interface {
@@ -159,3 +160,83 @@ type BooleanLiteral struct {
 func (bl *BooleanLiteral) expressionNode()      {}
 func (bl *BooleanLiteral) TokenLiteral() string { return bl.Token.Value }
 func (bl *BooleanLiteral) Stringify() string    { return bl.Token.Value }
+
+type IfExpression struct {
+	Token       lexer.Token
+	Condition   Expression
+	Consequence *BlockStatment
+	Alternative *BlockStatment
+}
+
+func (ie *IfExpression) expressionNode()      {}
+func (ie *IfExpression) TokenLiteral() string { return ie.Token.Value }
+func (ie *IfExpression) Stringify() string {
+	var out bytes.Buffer
+	out.WriteString("if")
+	out.WriteString(ie.Condition.Stringify())
+	out.WriteString(" ")
+	out.WriteString(ie.Consequence.Stringify())
+	if ie.Alternative != nil {
+		out.WriteString("else ")
+		out.WriteString(ie.Alternative.Stringify())
+	}
+	return out.String()
+}
+
+type BlockStatment struct {
+	Token      lexer.Token
+	Statements []Statement
+}
+
+func (bs *BlockStatment) expressionNode()      {}
+func (bs *BlockStatment) TokenLiteral() string { return bs.Token.Value }
+func (bs *BlockStatment) Stringify() string {
+	var out bytes.Buffer
+	for _, s := range bs.Statements {
+		out.WriteString(s.Stringify())
+	}
+	return out.String()
+}
+
+type FunctionLiteral struct {
+	Token  lexer.Token
+	Params []*Identifier
+	Body   *BlockStatment
+}
+
+func (fl *FunctionLiteral) expressionNode()      {}
+func (fl *FunctionLiteral) TokenLiteral() string { return fl.Token.Value }
+func (fl *FunctionLiteral) Stringify() string {
+	var out bytes.Buffer
+	params := []string{}
+	for _, p := range fl.Params {
+		params = append(params, p.Stringify())
+	}
+	out.WriteString(fl.TokenLiteral())
+	out.WriteString("(")
+	out.WriteString(strings.Join(params, ", "))
+	out.WriteString(") ")
+	out.WriteString(fl.Body.Stringify())
+	return out.String()
+}
+
+type CallExpression struct {
+	Token     lexer.Token
+	Function  Expression
+	Arguments []Expression
+}
+
+func (ce *CallExpression) expressionNode()      {}
+func (ce *CallExpression) TokenLiteral() string { return ce.Token.Value }
+func (ce *CallExpression) Stringify() string {
+	var out bytes.Buffer
+	args := []string{}
+	for _, a := range ce.Arguments {
+		args = append(args, a.Stringify())
+	}
+	out.WriteString(ce.Function.Stringify())
+	out.WriteString("(")
+	out.WriteString(strings.Join(args, ", "))
+	out.WriteString(")")
+	return out.String()
+}
