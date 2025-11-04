@@ -67,6 +67,9 @@ func (p *Parser) initPrefix() {
 	p.registerPrefix(lexer.NUMBER, p.parseIntegerLiteral)
 	p.registerPrefix(lexer.NOT, p.parsePrefixExpression)
 	p.registerPrefix(lexer.DASH, p.parsePrefixExpression)
+	p.registerPrefix(lexer.TRUE, p.parseBoolean)
+	p.registerPrefix(lexer.FALSE, p.parseBoolean)
+	p.registerPrefix(lexer.OPEN_PAREN, p.parseGroupedExpression)
 }
 
 func (p *Parser) initInfix() {
@@ -206,6 +209,15 @@ func (p *Parser) parseStatement() ast.Statement {
 	}
 }
 
+func (p *Parser) parseGroupedExpression() ast.Expression {
+	p.nextToken()
+	exp := p.parseExpression(LOWEST)
+	if !p.expectPeek(lexer.CLOSE_PAREN) {
+		return nil
+	}
+	return exp
+}
+
 func (p *Parser) parseExpressionStatment() *ast.ExpressionStatement {
 	stmt := &ast.ExpressionStatement{Token: p.curToken}
 	stmt.Expression = p.parseExpression(LOWEST) // entry binding power
@@ -264,4 +276,8 @@ func (p *Parser) parseLetStatement() *ast.LetStatment {
 		p.nextToken()
 	}
 	return stmt
+}
+
+func (p *Parser) parseBoolean() ast.Expression {
+	return &ast.BooleanLiteral{Token: p.curToken, Value: p.curTokenIs(lexer.TRUE)}
 }
