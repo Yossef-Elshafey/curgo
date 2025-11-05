@@ -2,6 +2,7 @@ package repl
 
 import (
 	"bufio"
+	"curgo/eval"
 	"curgo/lexer"
 	"curgo/parser"
 	"fmt"
@@ -24,6 +25,12 @@ func Start(in io.Reader, out io.Writer) {
 			printParserErrors(out, p.Errors())
 			continue
 		}
+		evaluated := eval.Eval(program)
+		if evaluated != nil {
+			io.WriteString(out, evaluated.Inspect())
+			io.WriteString(out, "\n")
+		}
+
 		io.WriteString(out, program.Stringify())
 		io.WriteString(out, "\n")
 	}

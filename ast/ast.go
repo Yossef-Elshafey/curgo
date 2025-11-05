@@ -9,7 +9,6 @@ import (
 type Node interface {
 	TokenLiteral() string
 	Stringify() string
-	// Visitor()
 }
 
 type Statement interface {
