@@ -43,7 +43,6 @@ func (p *Program) Stringify() string {
 }
 
 // TODO: change Token to be lexer.TokenKind instead of the struct
-// Then i can use lexer.TokenKindStr(token) to represent its value as string
 
 type LetStatment struct {
 	Token lexer.Token

@@ -212,11 +212,10 @@ func (p *Parser) parserReturnStatement() *ast.ReturnStatement {
 
 func (p *Parser) parseExpressionStatment() *ast.ExpressionStatement {
 	stmt := &ast.ExpressionStatement{Token: p.curToken}
-	stmt.Expression = p.parseExpression(LOWEST) // entry binding power
+	stmt.Expression = p.parseExpression(LOWEST)
 	if p.peekTokenIs(lexer.SEMI_COLON) {
 		p.nextToken()
 	}
-	// TODO: else throw error
 	return stmt
 }
 
