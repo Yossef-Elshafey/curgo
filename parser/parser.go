@@ -398,5 +398,5 @@ func (p *Parser) parseGroupedExpression() ast.Expression {
 }
 
 func (p *Parser) parseBoolean() ast.Expression {
-	return &ast.BooleanLiteral{Token: p.curToken, Value: p.curTokenIs(lexer.TRUE)}
+	return &ast.Boolean{Token: p.curToken, Value: p.curTokenIs(lexer.TRUE)}
 }

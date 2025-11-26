@@ -28,10 +28,9 @@ func Start(in io.Reader, out io.Writer) {
 		evaluated := eval.Eval(program)
 		if evaluated != nil {
 			io.WriteString(out, evaluated.Inspect())
-			io.WriteString(out, "\n")
+			// io.WriteString(out, "\n")
 		}
-
-		io.WriteString(out, program.Stringify())
+		// io.WriteString(out, "Stringify: "+program.Stringify())
 		io.WriteString(out, "\n")
 	}
 }

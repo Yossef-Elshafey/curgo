@@ -1,22 +1,27 @@
 package main
 
 import (
+	"curgo/eval"
 	"curgo/lexer"
 	"curgo/parser"
-	"curgo/repl"
+	_ "curgo/repl"
+	_ "fmt"
 	"log"
 	"os"
 )
 
 func main() {
-	bytes, err := os.ReadFile("./examples/parser.txt")
+	bytes, err := os.ReadFile("./examples/02.txt")
 	if err != nil {
 		log.Fatalf("Error: cannot open file")
 	}
-
 	source := string(bytes)
 	tokens := lexer.Tokenize(source)
+	// fmt.Printf("%+v", tokens)
 	p := parser.New(tokens)
-	p.ParseProgram()
-	repl.Start(os.Stdin, os.Stdout)
+	program := p.ParseProgram()
+
+	eval.Eval(program)
+	// repl.Start(os.Stdin, os.Stdout)
+
 }

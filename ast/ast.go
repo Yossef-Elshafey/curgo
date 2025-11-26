@@ -150,14 +150,14 @@ func (be *BinaryExpression) Stringify() string {
 	return out.String()
 }
 
-type BooleanLiteral struct {
+type Boolean struct {
 	Token lexer.Token
 	Value bool
 }
 
-func (bl *BooleanLiteral) expressionNode()      {}
-func (bl *BooleanLiteral) TokenLiteral() string { return bl.Token.Value }
-func (bl *BooleanLiteral) Stringify() string    { return bl.Token.Value }
+func (bl *Boolean) expressionNode()      {}
+func (bl *Boolean) TokenLiteral() string { return bl.Token.Value }
+func (bl *Boolean) Stringify() string    { return bl.Token.Value }
 
 type IfExpression struct {
 	Token       lexer.Token
