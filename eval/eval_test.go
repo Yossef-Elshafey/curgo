@@ -188,6 +188,42 @@ func TestEvalIntegerExpression(t *testing.T) {
 	}
 }
 
+func TestFunctionObject(t *testing.T) {
+	input := "fn(x) {x + 2};"
+	evaluated := testEval(input)
+	fn, ok := evaluated.(*object.Function)
+	if !ok {
+		t.Fatalf("object is not function. got=%T (%+v)", evaluated, evaluated)
+	}
+	if len(fn.Params) != 1 {
+		t.Fatalf("function has wrong params. Params=%+v", fn.Params)
+	}
+	if fn.Params[0].Stringify() != "x" {
+		t.Fatalf("parameter is not 'x'. got=%q", fn.Params[0])
+	}
+	expectBody := "(x + 2)"
+	if fn.Body.Stringify() != expectBody {
+		t.Fatalf("body is not %q. got=%q", expectBody, fn.Body.Stringify())
+	}
+}
+
+func TestFunctionApplication(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected int64
+	}{
+		{"let identity = fn(x) { x; }; identity(5);", 5},
+		{"let identity = fn(x) { return x; }; identity(5);", 5},
+		{"let double = fn(x) { x * 2; }; double(5);", 10},
+		{"let add = fn(x, y) { x + y; }; add(5, 5);", 10},
+		{"let add = fn(x, y) { x + y; }; add(5 + 5, add(5, 5));", 20},
+		{"fn(x) { x; }(5)", 5},
+	}
+	for _, tt := range tests {
+		testIntegerObject(t, testEval(tt.input), tt.expected)
+	}
+}
+
 func testEval(input string) object.Object {
 	l := lexer.Tokenize(input)
 	p := parser.New(l)

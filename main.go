@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	bytes, err := os.ReadFile("./examples/testLet.txt")
+	bytes, err := os.ReadFile("./examples/testFn.txt")
 	if err != nil {
 		log.Fatalf("Error: cannot open file")
 	}
