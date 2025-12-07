@@ -80,7 +80,7 @@ func skipHandler(lex *lexer, regex *regexp.Regexp) {
 func stringHandler(lex *lexer, regex *regexp.Regexp) {
 	match := regex.FindStringIndex(lex.remainder())
 	literal := lex.remainder()[match[0]:match[1]]
-	lex.push(NewToken(STRING, literal))
+	lex.push(NewToken(STRING, literal[1:len(literal)-1]))
 	lex.shift(len(literal))
 }
 

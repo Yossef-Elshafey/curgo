@@ -65,6 +65,7 @@ func New(l []lexer.Token) *Parser {
 func (p *Parser) initPrefix() {
 	p.prefixParseFns = make(map[lexer.TokenKind]prefixParseFn)
 	p.registerPrefix(lexer.IDENTIFIER, p.parseIdentifier)
+	p.registerPrefix(lexer.STRING, p.parseStringLiteral)
 	p.registerPrefix(lexer.NUMBER, p.parseIntegerLiteral)
 	p.registerPrefix(lexer.NOT, p.parsePrefixExpression)
 	p.registerPrefix(lexer.DASH, p.parsePrefixExpression)
@@ -399,4 +400,8 @@ func (p *Parser) parseGroupedExpression() ast.Expression {
 
 func (p *Parser) parseBoolean() ast.Expression {
 	return &ast.Boolean{Token: p.curToken, Value: p.curTokenIs(lexer.TRUE)}
+}
+
+func (p *Parser) parseStringLiteral() ast.Expression {
+	return &ast.StringLiteral{Token: p.curToken, Value: p.curToken.Value}
 }

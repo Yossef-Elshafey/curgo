@@ -26,6 +26,19 @@ func TestNotOperator(t *testing.T) {
 	}
 }
 
+func TestStringLiteral(t *testing.T) {
+	input := `"hello world"`
+	evaluated := testEval(input)
+	str, ok := evaluated.(*object.String)
+	if !ok {
+		t.Fatalf("object is not string. got=%T (%+v)", evaluated, evaluated)
+	}
+
+	if str.Value != "hello world" {
+		t.Errorf("string has wrong Value. got=%q", str.Value)
+	}
+}
+
 func TestClosures(t *testing.T) {
 	input := `
 	let newAdder = fn(x) {

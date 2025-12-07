@@ -12,12 +12,13 @@ import (
 )
 
 func main() {
-	bytes, err := os.ReadFile("./examples/testFn.txt")
+	bytes, err := os.ReadFile("./examples/testString.txt")
 	if err != nil {
 		log.Fatalf("Error: cannot open file")
 	}
 	source := string(bytes)
 	tokens := lexer.Tokenize(source)
+	fmt.Printf("%+v\n", tokens)
 	p := parser.New(tokens)
 	progarm := p.ParseProgram()
 	env := object.NewEnvironment()
