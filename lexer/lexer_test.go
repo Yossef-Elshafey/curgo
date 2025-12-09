@@ -32,16 +32,27 @@ func TestExpectedTokens(t *testing.T) {
 				{Value: "=", Type: ASSIGNMENT},
 				{Value: "10", Type: NUMBER},
 				{Value: ";", Type: SEMI_COLON},
-				{Value: "", Type: EOF},
+				{Value: "EOF", Type: EOF},
 			}},
-		{input: "fn () {}",
+		{input: "fetch () {}",
 			expected: []Token{
-				{Value: "fn", Type: FN},
+				{Value: "fetch", Type: FETCH},
 				{Value: "(", Type: OPEN_PAREN},
 				{Value: ")", Type: CLOSE_PAREN},
 				{Value: "{", Type: OPEN_CURLY},
 				{Value: "}", Type: CLOSE_CURLY},
-				{Value: "", Type: EOF},
+				{Value: "EOF", Type: EOF},
+			},
+		},
+
+		{input: "data if else return ==",
+			expected: []Token{
+				{Value: "data", Type: DATA},
+				{Value: "if", Type: IF},
+				{Value: "else", Type: ELSE},
+				{Value: "return", Type: RETURN},
+				{Value: "==", Type: EQUALS},
+				{Value: "EOF", Type: EOF},
 			},
 		},
 	}
@@ -54,7 +65,7 @@ func TestExpectedTokens(t *testing.T) {
 		}
 
 		for i := 0; i < len(lex); i++ {
-			if lex[i].Type != ts.expected[i].Type {
+			if lex[i].Type != ts.expected[i].Type || lex[i].Value != ts.expected[i].Value {
 				t.Errorf("Lexer error: lex:%+v, expected: %+v", lex[i], ts.expected[i])
 			}
 		}

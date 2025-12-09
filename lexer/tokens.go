@@ -54,17 +54,16 @@ const (
 	STAR
 	PERCENT
 
+	FETCH
+	DATA
+
 	LET
-	CONST
 	IMPORT
 	FROM
-	FN
 	IF
 	ELSE
 	FOREACH
-	WHILE
 	FOR
-	EXPORT
 	TYPEOF
 	IN
 	RETURN
@@ -72,13 +71,13 @@ const (
 
 var reserved_lu map[string]TokenKind = map[string]TokenKind{
 	"let":     LET,
-	"const":   CONST,
 	"import":  IMPORT,
 	"foreach": FOREACH,
 	"return":  RETURN,
 	"if":      IF,
 	"else":    ELSE,
-	"fn":      FN,
+	"fetch":   FETCH,
+	"data":    DATA,
 	"true":    TRUE,
 	"false":   FALSE,
 }
@@ -166,14 +165,10 @@ func TokenKindString(kind TokenKind) string {
 		return "percent"
 	case LET:
 		return "let"
-	case CONST:
-		return "const"
 	case IMPORT:
 		return "import"
 	case FROM:
 		return "from"
-	case FN:
-		return "fn"
 	case IF:
 		return "if"
 	case ELSE:
@@ -182,10 +177,6 @@ func TokenKindString(kind TokenKind) string {
 		return "foreach"
 	case FOR:
 		return "for"
-	case WHILE:
-		return "while"
-	case EXPORT:
-		return "export"
 	case IN:
 		return "in"
 	default:
