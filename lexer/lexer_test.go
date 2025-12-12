@@ -1,18 +1,19 @@
 package lexer
 
 import (
+	"curgo/types/tokens"
 	"testing"
 )
 
 func TestLexer(t *testing.T) {
-	compareValueToKind("foreach", FOREACH, t)
-	compareValueToKind("import", IMPORT, t)
-	compareValueToKind("true", TRUE, t)
-	compareValueToKind("", EOF, t)
-	compareValueToKind("foo", IDENTIFIER, t)
+	compareValueToKind("foreach", tokens.FOREACH, t)
+	compareValueToKind("import", tokens.IMPORT, t)
+	compareValueToKind("true", tokens.TRUE, t)
+	compareValueToKind("", tokens.EOF, t)
+	compareValueToKind("foo", tokens.IDENTIFIER, t)
 }
 
-func compareValueToKind(input string, tk TokenKind, t *testing.T) {
+func compareValueToKind(input string, tk tokens.TokenKind, t *testing.T) {
 	lex := Tokenize(string(input))
 	token := lex[0]
 	if token.Type != tk {
@@ -23,36 +24,36 @@ func compareValueToKind(input string, tk TokenKind, t *testing.T) {
 func TestExpectedTokens(t *testing.T) {
 	tests := []struct {
 		input    string
-		expected []Token
+		expected []tokens.Token
 	}{
 		{input: "let x = 10;",
-			expected: []Token{
-				{Value: "let", Type: LET},
-				{Value: "x", Type: IDENTIFIER},
-				{Value: "=", Type: ASSIGNMENT},
-				{Value: "10", Type: NUMBER},
-				{Value: ";", Type: SEMI_COLON},
-				{Value: "EOF", Type: EOF},
+			expected: []tokens.Token{
+				{Value: "let", Type: tokens.LET},
+				{Value: "x", Type: tokens.IDENTIFIER},
+				{Value: "=", Type: tokens.ASSIGNMENT},
+				{Value: "10", Type: tokens.NUMBER},
+				{Value: ";", Type: tokens.SEMI_COLON},
+				{Value: "EOF", Type: tokens.EOF},
 			}},
 		{input: "fetch () {}",
-			expected: []Token{
-				{Value: "fetch", Type: FETCH},
-				{Value: "(", Type: OPEN_PAREN},
-				{Value: ")", Type: CLOSE_PAREN},
-				{Value: "{", Type: OPEN_CURLY},
-				{Value: "}", Type: CLOSE_CURLY},
-				{Value: "EOF", Type: EOF},
+			expected: []tokens.Token{
+				{Value: "fetch", Type: tokens.FETCH},
+				{Value: "(", Type: tokens.OPEN_PAREN},
+				{Value: ")", Type: tokens.CLOSE_PAREN},
+				{Value: "{", Type: tokens.OPEN_CURLY},
+				{Value: "}", Type: tokens.CLOSE_CURLY},
+				{Value: "EOF", Type: tokens.EOF},
 			},
 		},
 
 		{input: "data if else return ==",
-			expected: []Token{
-				{Value: "data", Type: DATA},
-				{Value: "if", Type: IF},
-				{Value: "else", Type: ELSE},
-				{Value: "return", Type: RETURN},
-				{Value: "==", Type: EQUALS},
-				{Value: "EOF", Type: EOF},
+			expected: []tokens.Token{
+				{Value: "data", Type: tokens.DATA},
+				{Value: "if", Type: tokens.IF},
+				{Value: "else", Type: tokens.ELSE},
+				{Value: "return", Type: tokens.RETURN},
+				{Value: "==", Type: tokens.EQUALS},
+				{Value: "EOF", Type: tokens.EOF},
 			},
 		},
 	}

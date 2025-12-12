@@ -1,183 +1,119 @@
 package lexer
 
-import "fmt"
-
-type TokenKind int
-
-type Token struct {
-	Value string
-	Type  TokenKind
-}
-
-// Token Enum
-const (
-	EOF TokenKind = iota
-	NULL
-	TRUE
-	FALSE
-	NUMBER
-	STRING
-	IDENTIFIER
-
-	OPEN_BRACKET
-	CLOSE_BRACKET
-	OPEN_CURLY
-	CLOSE_CURLY
-	OPEN_PAREN
-	CLOSE_PAREN
-
-	ASSIGNMENT
-	EQUALS
-	NOT_EQUALS
-	NOT
-
-	LESS
-	LESS_EQUALS
-	GREATER
-	GREATER_EQUALS
-
-	OR
-	AND
-
-	DOT
-	SEMI_COLON
-	COLON
-	QUESTION
-	COMMA
-
-	PLUS_EQUALS
-	MINUS_EQUALS
-
-	PLUS
-	DASH
-	SLASH
-	STAR
-	PERCENT
-
-	FETCH
-	DATA
-
-	LET
-	IMPORT
-	FROM
-	IF
-	ELSE
-	FOREACH
-	FOR
-	TYPEOF
-	IN
-	RETURN
+import (
+	"curgo/types/tokens"
+	"fmt"
 )
 
-var reserved_lu map[string]TokenKind = map[string]TokenKind{
-	"let":     LET,
-	"import":  IMPORT,
-	"foreach": FOREACH,
-	"return":  RETURN,
-	"if":      IF,
-	"else":    ELSE,
-	"fetch":   FETCH,
-	"data":    DATA,
-	"true":    TRUE,
-	"false":   FALSE,
+var reserved_lu map[string]tokens.TokenKind = map[string]tokens.TokenKind{
+	"let":     tokens.LET,
+	"import":  tokens.IMPORT,
+	"foreach": tokens.FOREACH,
+	"return":  tokens.RETURN,
+	"if":      tokens.IF,
+	"else":    tokens.ELSE,
+	"fetch":   tokens.FETCH,
+	"data":    tokens.DATA,
+	"true":    tokens.TRUE,
+	"false":   tokens.FALSE,
 }
 
-func NewToken(kind TokenKind, value string) Token {
-	return Token{
+func NewToken(kind tokens.TokenKind, value string) tokens.Token {
+	return tokens.Token{
 		Type:  kind,
 		Value: value,
 	}
 }
 
-func TokenKindString(kind TokenKind) string {
+func TokenKindString(kind tokens.TokenKind) string {
 	switch kind {
-	case EOF:
+	case tokens.EOF:
 		return "eof"
-	case RETURN:
+	case tokens.RETURN:
 		return "return"
-	case NULL:
+	case tokens.NULL:
 		return "null"
-	case NUMBER:
+	case tokens.NUMBER:
 		return "number"
-	case STRING:
+	case tokens.STRING:
 		return "string"
-	case TRUE:
+	case tokens.TRUE:
 		return "true"
-	case FALSE:
+	case tokens.FALSE:
 		return "false"
-	case IDENTIFIER:
+	case tokens.IDENTIFIER:
 		return "identifier"
-	case OPEN_BRACKET:
+	case tokens.OPEN_BRACKET:
 		return "open_bracket"
-	case CLOSE_BRACKET:
+	case tokens.CLOSE_BRACKET:
 		return "close_bracket"
-	case OPEN_CURLY:
+	case tokens.OPEN_CURLY:
 		return "open_curly"
-	case CLOSE_CURLY:
+	case tokens.CLOSE_CURLY:
 		return "close_curly"
-	case OPEN_PAREN:
+	case tokens.OPEN_PAREN:
 		return "open_paren"
-	case CLOSE_PAREN:
+	case tokens.CLOSE_PAREN:
 		return "close_paren"
-	case ASSIGNMENT:
+	case tokens.ASSIGNMENT:
 		return "assignment"
-	case EQUALS:
+	case tokens.EQUALS:
 		return "equals"
-	case NOT_EQUALS:
+	case tokens.NOT_EQUALS:
 		return "not_equals"
-	case NOT:
+	case tokens.NOT:
 		return "not"
-	case LESS:
+	case tokens.LESS:
 		return "less"
-	case LESS_EQUALS:
+	case tokens.LESS_EQUALS:
 		return "less_equals"
-	case GREATER:
+	case tokens.GREATER:
 		return "greater"
-	case GREATER_EQUALS:
+	case tokens.GREATER_EQUALS:
 		return "greater_equals"
-	case OR:
+	case tokens.OR:
 		return "or"
-	case AND:
+	case tokens.AND:
 		return "and"
-	case DOT:
+	case tokens.DOT:
 		return "dot"
-	case SEMI_COLON:
+	case tokens.SEMI_COLON:
 		return "semi_colon"
-	case COLON:
+	case tokens.COLON:
 		return "colon"
-	case QUESTION:
+	case tokens.QUESTION:
 		return "question"
-	case COMMA:
+	case tokens.COMMA:
 		return "comma"
-	case PLUS_EQUALS:
+	case tokens.PLUS_EQUALS:
 		return "plus_equals"
-	case MINUS_EQUALS:
+	case tokens.MINUS_EQUALS:
 		return "minus_equals"
-	case PLUS:
+	case tokens.PLUS:
 		return "plus"
-	case DASH:
+	case tokens.DASH:
 		return "dash"
-	case SLASH:
+	case tokens.SLASH:
 		return "slash"
-	case STAR:
+	case tokens.STAR:
 		return "star"
-	case PERCENT:
+	case tokens.PERCENT:
 		return "percent"
-	case LET:
+	case tokens.LET:
 		return "let"
-	case IMPORT:
+	case tokens.IMPORT:
 		return "import"
-	case FROM:
+	case tokens.FROM:
 		return "from"
-	case IF:
+	case tokens.IF:
 		return "if"
-	case ELSE:
+	case tokens.ELSE:
 		return "else"
-	case FOREACH:
+	case tokens.FOREACH:
 		return "foreach"
-	case FOR:
+	case tokens.FOR:
 		return "for"
-	case IN:
+	case tokens.IN:
 		return "in"
 	default:
 		return fmt.Sprintf("unknown(%d)", kind)

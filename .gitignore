@@ -1,4 +1,4 @@
 *.txt
 .vim/
 .curgo/
-testat/
+tests/
