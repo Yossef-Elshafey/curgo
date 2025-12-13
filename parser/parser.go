@@ -3,7 +3,6 @@ package parser
 import (
 	"curgo/types/tokens"
 	"fmt"
-	"sync"
 )
 
 type Parser struct {
@@ -11,14 +10,12 @@ type Parser struct {
 	pos          int
 	currentToken tokens.Token
 	peekToken    tokens.Token
-	wg           *sync.WaitGroup
 }
 
 func NewParser() *Parser {
 	p := &Parser{}
 	p.pos = 0
 	p.que = make([]tokens.Token, 0)
-	p.wg = &sync.WaitGroup{}
 	return p
 }
 
