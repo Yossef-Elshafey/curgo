@@ -1,67 +1,76 @@
 package tokens
 
+import "log"
+
 type TokenKind int
 
-type Token struct {
-	Value string
-	Type  TokenKind
-}
-
 const (
-	EOF TokenKind = iota
-	NULL
-	TRUE
-	FALSE
-	NUMBER
+	_ TokenKind = iota
+	TRANSPILE_ASSIGN
 	STRING
 	IDENTIFIER
 
-	OPEN_BRACKET
-	CLOSE_BRACKET
+	SEMI_COLON
+	BACKTICK
+	PLUS
+	COLON
 	OPEN_CURLY
 	CLOSE_CURLY
-	OPEN_PAREN
-	CLOSE_PAREN
-
-	ASSIGNMENT
-	EQUALS
-	NOT_EQUALS
-	NOT
-
-	LESS
-	LESS_EQUALS
-	GREATER
-	GREATER_EQUALS
-
-	OR
-	AND
-
-	DOT
-	SEMI_COLON
-	COLON
-	QUESTION
 	COMMA
-
-	PLUS_EQUALS
-	MINUS_EQUALS
-
-	PLUS
-	DASH
-	SLASH
-	STAR
-	PERCENT
 
 	FETCH
 	DATA
+	GLOBAL
+	ENDFETCH
 
-	LET
-	IMPORT
-	FROM
-	IF
-	ELSE
-	FOREACH
-	FOR
-	TYPEOF
-	IN
-	RETURN
+	EOF
+	NEW_LINE
 )
+
+type Token struct {
+	Kind  TokenKind
+	Value string
+	Pos   Position
+}
+
+type Position struct {
+	Line  int
+	Start int
+	End   int
+}
+
+func TokenKindStringify(k TokenKind) string {
+	switch k {
+	case TRANSPILE_ASSIGN:
+		return "transpile_assign"
+	case STRING:
+		return "string"
+	case SEMI_COLON:
+		return "semi_colon"
+	case COLON:
+		return "colon"
+	case OPEN_CURLY:
+		return "open_curly"
+	case CLOSE_CURLY:
+		return "close_curly"
+	case FETCH:
+		return "fetch"
+	case DATA:
+		return "data"
+	case GLOBAL:
+		return "global"
+	case IDENTIFIER:
+		return "identifier"
+	case EOF:
+		return "eof"
+	case COMMA:
+		return "comma"
+	case ENDFETCH:
+		return "endfetch"
+	case BACKTICK:
+		return "backtick"
+	default:
+		log.Fatalf("Cannot stringfy token: %d no case match", k)
+		return ""
+	}
+}

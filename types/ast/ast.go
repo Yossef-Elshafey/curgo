@@ -2,29 +2,48 @@ package ast
 
 import "curgo/types/tokens"
 
-type Expression interface {
-	expressionNode()
+type Node interface {
+	GetPositions() tokens.Position
+	Stringify() string
 }
 
 type Statement interface {
-	statementNode()
+	iStmt()
+}
+
+type Expression interface {
+	iExpr()
 }
 
 type Program struct {
-	Stmts []Statement
+	Statements []Statement
 }
-
-type LetStatment struct {
-	Token tokens.Token
-	Name  *Identifier
-	Value string
-}
-
-func (ls *LetStatment) statementNode() {}
 
 type Identifier struct {
 	Token tokens.Token
+	Value  string
+}
+
+func (i *Identifier) iExpr() {}
+
+type FetchStmt struct {
+	Token tokens.Token
+	FetchIdentifier  *Identifier
+	Body  []Statement
+}
+
+type StringLiteral struct {
+	Token tokens.Token
 	Value string
 }
 
-func (i *Identifier) expressionNode() {}
+func (sl *StringLiteral) iExpr() {}
+
+type CurgoAssignStatment struct {
+	Arg   *Identifier
+	Value Expression
+}
+
+func (ca *CurgoAssignStatment) iStmt() {}
+
+func (f *FetchStmt) iStmt() {}
