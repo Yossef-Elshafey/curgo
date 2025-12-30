@@ -21,7 +21,6 @@ type Evaluater struct {
 
 func (e *Evaluater) Eval() {
 	e.transpiler = transpiler.New()
-	fmt.Printf("Eval: %+v\n", e.Program)
 	for _, stmt := range e.Program.Statements {
 		if n, ok := stmt.(*ast.FetchStmt); ok { e.evalFetchStmt(n) }
 	}
@@ -39,28 +38,30 @@ func (e *Evaluater) evalFetchStmt(n *ast.FetchStmt) {
 			// body content is []Statements interface but now it only contains ast.CurgoAssignStatment
 			e.fail(fmt.Sprintf("FetchStmt.body is not ast.CurgoAssignStatment, got=%T", stmt))
 		}
-		argument, ok := e.transpiler.Get(stmt.Arg.Value)
-		if !ok {
-			e.fail(fmt.Sprintf("Eval: Argument not found %s", stmt.Arg.Value))
-		}
-		value, ok := stmt.Value.(*ast.StringLiteral)
+		stringLiteral, ok := stmt.Value.(*ast.StringLiteral)
 		if !ok {
 			fmt.Printf("Eval: Cannot convert to ast.StringLiteral")
 		}
-		cmd = cmd + fmt.Sprintf("%s %s ", argument, value.Value)
+		argument, value := e.transpiler.Get(stmt.Arg.Value, stringLiteral.Value)
+		cmd = cmd + fmt.Sprintf("%s %s ", argument, value)
 	}
 	e.executeCurlCommand(n.FetchIdentifier.Value, cmd)
 }
 
 func (e *Evaluater) executeCurlCommand(title, command string) {
-	cmd := exec.Command("curl", command)
-	fmt.Printf("Command: %s",cmd.String())
-	cmd.Stdin = strings.NewReader("Foo")
-	var out bytes.Buffer
-	cmd.Stdout = &out
+	// https://www.sohamkamani.com/golang/exec-shell-command/
+	fmt.Printf("%s\n",strings.Repeat("-",10))
+	fmt.Printf("Executing %s...\n",title)
+
+	var stdout, stderr bytes.Buffer
+	cmd := exec.Command("/bin/sh", "-c", "curl" + command)
+	cmd.Stdout = &stdout
 	err := cmd.Run()
+	
 	if err != nil {
-		e.fail(err.Error())
+		log.Fatalf("Command failed with %s: %s", err, stderr.String())
 	}
-	fmt.Printf("%s: %q\n",title, out.String())
+
+	fmt.Printf("Response: %s\n", stdout.String())
+	fmt.Printf("%s\n",strings.Repeat("-",10))
 }
