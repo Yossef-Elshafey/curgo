@@ -1,7 +1,3 @@
-//	for _, assignment := range e.Program.Statements[0].(*ast.FetchStmt).Body {
-//		a := assignment.(*ast.CurgoAssignStatment)
-//		fmt.Printf("Assignment: %+v\nPure Value ---%s---\n", a.Value, a.Value.(*ast.StringLiteral).Value)
-//	}
 package eval
 
 import (
