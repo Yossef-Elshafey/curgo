@@ -1,11 +1,13 @@
 package main
 
 import (
-	"curgo/errors"
+	"curgo/eval"
 	"curgo/lexer"
+	"curgo/parser"
 )
 
 func Interpret(source string) {
-	errors.SetSourceName(source)
-	lexer.Tokenize(source).Parse().Eval()
+	tokens := lexer.Tokenize(source)
+	p := parser.Parse(tokens)
+	eval.Eval(p)
 }

@@ -27,16 +27,10 @@ const (
 	NEW_LINE
 )
 
-type Token struct {
-	Kind  TokenKind
-	Value string
-	Pos   Position
-}
-
-type Position struct {
-	Line  int
-	Start int
-	End   int
+var Reserved_Keyword = map[string]TokenKind{
+	"global": GLOBAL,
+	"fetch":  FETCH,
+	"endfet": ENDFETCH,
 }
 
 func TokenKindStringify(k TokenKind) string {
@@ -74,3 +68,4 @@ func TokenKindStringify(k TokenKind) string {
 		return ""
 	}
 }
+

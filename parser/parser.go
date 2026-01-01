@@ -1,7 +1,7 @@
 package parser
 
 import (
-	"curgo/eval"
+	"curgo/lexer"
 	"curgo/types/ast"
 	"curgo/types/tokens"
 	"fmt"
@@ -9,11 +9,10 @@ import (
 )
 
 type Parser struct {
-	Tokens       []tokens.Token
-	currentToken tokens.Token
-	peekToken    tokens.Token
-	position     int
-	evaluater    *eval.Evaluater
+	currentToken  lexer.Token
+	tokens        []lexer.Token
+	peekToken     lexer.Token
+	position      int
 }
 
 type (
@@ -33,20 +32,17 @@ const (
 var bindingPowerLookup = map[string]bindingPower{
 	"+": SUM,
 	"-": SUM,
-	"*": SUM,
-	"/": SUM,
+	"*": PRODUCT,
+	"/": PRODUCT,
 }
+
 var prefixLookup = map[tokens.TokenKind]prefixParseFn{}
 var infixLookup = map[tokens.TokenKind]infixParseFn{}
 
-func (p *Parser) initParser() {
-	p.alignTokens()
-	p.initPrefix()
-	p.initInfix()
-	p.evaluater = &eval.Evaluater{}
-}
 
-func (p *Parser) Parse() *eval.Evaluater {
+func Parse(t []lexer.Token) ast.Program {
+	p := &Parser{}
+	p.tokens = t
 	p.initParser()
 	program := ast.Program{}
 	for !p.peekTokenIs(tokens.EOF) {
@@ -54,14 +50,19 @@ func (p *Parser) Parse() *eval.Evaluater {
 		program.Statements = append(program.Statements, stmt)
 		p.advanceTokens()
 	}
-	p.evaluater.Program = program
-	return p.evaluater
+	return program
+}
+
+func (p *Parser) initParser() {
+	p.alignTokens()
+	p.initPrefix()
+	p.initInfix()
 }
 
 func (p *Parser) initPrefix() {
 	p.registerPrefix(tokens.IDENTIFIER, p.parseIdentifier)
-	p.registerPrefix(tokens.STRING, p.parseStringLiteral)
-	p.registerPrefix(tokens.BACKTICK, p.parseStringLiteral)
+	p.registerPrefix(tokens.STRING,     p.parseStringLiteral)
+	p.registerPrefix(tokens.BACKTICK,   p.parseStringLiteral)
 }
 
 func (p *Parser) initInfix() {
@@ -89,8 +90,8 @@ func (p *Parser) peekTokenIs(k tokens.TokenKind) bool {
 
 func (p *Parser) advanceTokens() {
 	p.currentToken = p.peekToken
-	p.peekToken = p.Tokens[p.position]
-	if p.position+1 != len(p.Tokens) {
+	p.peekToken = p.tokens[p.position]
+	if p.position+1 != len(p.tokens) {
 		p.position++
 	}
 }
@@ -121,7 +122,7 @@ func (p *Parser) parseStringLiteral() ast.Expression {
 }
 
 func (p *Parser) parseBinaryExpression(lhs ast.Expression) ast.Expression {
-	fmt.Printf("Infix is not supported\n")
+	fmt.Printf("Infix is not supported\n") // NOTE:
 	p.advanceTokens()
 	return nil
 }
@@ -154,6 +155,7 @@ func (p *Parser) parseFetchStatment() *ast.FetchStmt {
 	for !p.peekTokenIs(tokens.ENDFETCH) {
 		fs.Body = append(fs.Body, p.parseFetchBody())
 	}
+
 	p.advanceTokens()
 	return fs
 }

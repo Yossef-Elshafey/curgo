@@ -1,7 +1,6 @@
 package lexer
 
 import (
-	"curgo/parser"
 	"curgo/types/tokens"
 	"log"
 	"regexp"
@@ -17,14 +16,14 @@ type regexPattern struct {
 
 type lexer struct {
 	patterns []regexPattern
+	tokens   []Token
 	source   string
 	pos      int
 	char     int
 	line     int
-	parser   *parser.Parser
 }
 
-func Tokenize(source string) *parser.Parser {
+func Tokenize(source string) []Token {
 	lex := createLexer(source)
 	for !lex.isEOF() {
 		matched := false
@@ -43,7 +42,7 @@ func Tokenize(source string) *parser.Parser {
 	}
 
 	lex.push(NewToken(tokens.EOF, "EOF", lex.line, 0, -1))
-	return lex.parser
+	return lex.tokens
 }
 
 func (l *lexer) shift(n int) {
@@ -51,8 +50,8 @@ func (l *lexer) shift(n int) {
 	l.char += n
 }
 
-func (l *lexer) push(token tokens.Token) {
-	l.parser.Tokens = append(l.parser.Tokens, token)
+func (l *lexer) push(token Token) {
+	l.tokens = append(l.tokens, token)
 }
 
 func (l *lexer) getPositions(end int) (int, int, int) {
@@ -97,7 +96,7 @@ func stringHandler(lex *lexer, regex *regexp.Regexp, loc []int) {
 func symbolHandler(lex *lexer, regex *regexp.Regexp, loc []int) {
 	match := regex.FindString(lex.remainder())
 	line, start, end := lex.getPositions(loc[1])
-	if kind, exists := reserved_lookup[match]; exists {
+	if kind, exists := tokens.Reserved_Keyword[match]; exists {
 		lex.push(NewToken(kind, match, line, start, end))
 	} else {
 		lex.push(NewToken(tokens.IDENTIFIER, match, line, start, end))
@@ -149,7 +148,6 @@ func createLexer(source string) *lexer {
 		},
 		source: source,
 		line:   1,
-		parser: &parser.Parser{},
 	}
 }
 

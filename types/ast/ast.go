@@ -1,9 +1,11 @@
 package ast
 
-import "curgo/types/tokens"
+import (
+	"curgo/lexer"
+)
 
 type Node interface {
-	GetPositions() tokens.Position
+	GetPositions() lexer.Position
 	Stringify() string
 }
 
@@ -20,20 +22,20 @@ type Program struct {
 }
 
 type Identifier struct {
-	Token tokens.Token
+	Token lexer.Token
 	Value  string
 }
 
 func (i *Identifier) iExpr() {}
 
 type FetchStmt struct {
-	Token tokens.Token
+	Token lexer.Token
 	FetchIdentifier  *Identifier
 	Body  []Statement
 }
 
 type StringLiteral struct {
-	Token tokens.Token
+	Token lexer.Token
 	Value string
 }
 

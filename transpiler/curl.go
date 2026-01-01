@@ -25,10 +25,10 @@ func singleQuoteWrapper(v string) string {
 func nullWrapper(v string) string { return v }
 
 func (ct *CurlTranspiler) build() {
-	ct.set("header", &valueWrapper{argument:  "-H",  valueHandler:  doubleQuoteWrapper})
-	ct.set("data",   &valueWrapper{argument:  "-d",  valueHandler:  singleQuoteWrapper})
-	ct.set("method", &valueWrapper{argument:  "-X",  valueHandler:  nullWrapper})
-	ct.set("host",   &valueWrapper{argument:  "",    valueHandler:  nullWrapper})
+	ct.set("header",  &valueWrapper{argument:  "-H",  valueHandler:  doubleQuoteWrapper})
+	ct.set("data",    &valueWrapper{argument:  "-d",  valueHandler:  singleQuoteWrapper})
+	ct.set("method",  &valueWrapper{argument:  "-X",  valueHandler:  nullWrapper})
+	ct.set("host",    &valueWrapper{argument:  "",    valueHandler:  nullWrapper})
 }
 
 func New() *CurlTranspiler {
