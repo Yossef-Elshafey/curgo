@@ -14,11 +14,20 @@ type Evaluater struct {
 	transpiler *transpiler.CurlTranspiler
 }
 
-func Eval(program ast.Program) {
+func Eval(node ast.Node) {
 	e := &Evaluater{}
 	e.transpiler = transpiler.New()
-	for _, stmt := range program.Statements {
-		if n, ok := stmt.(*ast.FetchStmt); ok { e.evalFetchStmt(n) }
+	switch n := node.(type) {
+	case *ast.Program:
+		e.evalProgram(n)
+	case *ast.FetchStmt: 
+		e.evalFetchStmt(n)
+	}
+}
+
+func (e *Evaluater) evalProgram(n *ast.Program) {
+	for _, stmt := range n.Statements {
+		Eval(stmt)
 	}
 }
 

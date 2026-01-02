@@ -37,7 +37,11 @@ func Tokenize(source string) []Token {
 		}
 		if !matched {
 			limit := min((len(lex.remainder())), 10)
-			log.Fatalf("Lexer: Unrecognized(%s):%d: %s", string(lex.remainder()[0]), lex.line, lex.remainder()[0:limit])
+			lines := strings.ReplaceAll(string(lex.remainder()[0]) + lex.remainder()[0:limit], "","")
+			log.Fatalf("Lexer:%d: Unrecognized '%s'%s\n'%s' is not supported",
+				lex.line,
+				string(lex.remainder()[0]),
+				lines, string(lex.remainder()[0]))
 		}
 	}
 

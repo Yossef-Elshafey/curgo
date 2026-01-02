@@ -3,15 +3,17 @@ package transpiler
 import (
 	"fmt"
 	"log"
+	"strings"
 )
 
 type valueWrapper struct {
-	argument string
-	valueHandler  func(v string) string
+	argument      string           
+	valueHandler  func(v  string)  string
 }
 
 type CurlTranspiler struct {
-	params map[string]*valueWrapper
+	params    map[string]*valueWrapper
+	padding  int
 }
 
 func doubleQuoteWrapper(v string) string {
@@ -31,6 +33,12 @@ func (ct *CurlTranspiler) build() {
 	ct.set("host",    &valueWrapper{argument:  "",    valueHandler:  nullWrapper})
 }
 
+func (ct *CurlTranspiler) Help() {
+	for identifer, v := range ct.params {
+		fmt.Printf("%s %s-> %s\n", identifer, strings.Repeat(" ", ct.padding - len(identifer)), v.argument)
+	}
+}
+
 func New() *CurlTranspiler {
 	ct := &CurlTranspiler{params: make(map[string]*valueWrapper)}
 	ct.build()
@@ -38,6 +46,10 @@ func New() *CurlTranspiler {
 }
 
 func (ct *CurlTranspiler) set(from string, to *valueWrapper) {
+	if len(from) > ct.padding {
+		ct.padding = len(from)
+	}
+
 	if _, ok := ct.params[from]; ok {
 		log.Fatalf("Curl Transpiler: cant set %s already exists",  from)
 	}

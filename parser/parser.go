@@ -41,11 +41,11 @@ var prefixLookup = map[tokens.TokenKind]prefixParseFn{}
 var infixLookup = map[tokens.TokenKind]infixParseFn{}
 
 
-func Parse(t []lexer.Token) ast.Program {
+func Parse(t []lexer.Token) *ast.Program {
 	p := &Parser{}
 	p.tokens = t
 	p.initParser()
-	program := ast.Program{}
+	program := &ast.Program{}
 	for !p.peekTokenIs(tokens.EOF) {
 		stmt := p.parseStmt()
 		program.Statements = append(program.Statements, stmt)
