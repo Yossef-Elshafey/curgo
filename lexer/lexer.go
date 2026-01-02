@@ -123,7 +123,7 @@ func multiLineStringHandler(lex *lexer, regex *regexp.Regexp, loc []int) {
 	target = strings.TrimSpace(target[1:len(target)-1])
 	line, start, end := lex.getPositions(loc[1])
 	asterisk := 2
-	lex.push(NewToken(tokens.BACKTICK, target, line, start, end-asterisk))
+	lex.push(NewToken(tokens.STRING, target, line, start, end-asterisk))
 	lex.shift(len(match))
 }
 

@@ -6,7 +6,8 @@ import (
 )
 
 func main() {
-	f, err := os.ReadFile("./examples/00.txt")
+	path := "./examples/00.txt"
+	f, err := os.ReadFile(path)
 	if err != nil {
 		log.Fatalf("Failed to read file")
 	}

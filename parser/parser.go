@@ -4,6 +4,7 @@ import (
 	"curgo/lexer"
 	"curgo/types/ast"
 	"curgo/types/tokens"
+	"curgo/utils"
 	"fmt"
 	"log"
 )
@@ -101,13 +102,26 @@ func (p *Parser) alignTokens() {
 	p.advanceTokens()
 }
 
+func (p *Parser) isEndOfFetch() {
+	if p.peekTokenIs(tokens.EOF) && p.currentToken.Kind == tokens.SEMI_COLON {
+		fmt.Printf("hint: use 'endfet' keyword to close fetch statement\n")
+	}
+}
+
 func (p *Parser) expectPeekToBe(k tokens.TokenKind) bool {
 	if p.peekToken.Kind != k {
-		log.Fatalf("Parser:%d:%d: Expected %s to be %s",
-			p.peekToken.Pos.Line,
-			p.peekToken.Pos.Start,
-			tokens.TokenKindStringify(p.peekToken.Kind),
-			tokens.TokenKindStringify(k))
+		line := p.peekToken.Pos.Line
+		lineIssue := utils.ReadSourceAsLines(line)
+		p.isEndOfFetch()
+
+    // fmt.Printf("%c[%dmHELLO!\n", 0x1B, 32);
+		fmt.Printf("Parser:%d:%d: encouter error at line:\n %s\n", line-1,
+			p.currentToken.Pos.End,
+			lineIssue)
+
+		log.Fatalf("Expect to find %s after '%s', got=%s", tokens.TokenKindStringify(k),
+			p.currentToken.Value,
+			tokens.TokenKindStringify(p.peekToken.Kind))
 	}
 	p.advanceTokens()
 	return true
@@ -170,7 +184,9 @@ func (p *Parser) parseFetchBody() ast.Statement {
 		return nil
 	}
 
-	p.advanceTokens()
+	if !p.expectPeekToBe(tokens.STRING) {
+		return nil
+	}
 
 	ca.Value = p.parseExpression(LOWEST)
 

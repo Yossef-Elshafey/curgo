@@ -4,8 +4,6 @@ import (
 	"curgo/types/tokens"
 )
 
-
-
 func NewToken(k tokens.TokenKind, v string, l, s, e int) Token {
 	return Token{Kind: k, Value: v,
 		Pos: Position{Line: l, Start: s, End: e},
