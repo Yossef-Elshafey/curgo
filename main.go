@@ -12,9 +12,9 @@ import (
 )
 
 func main() {
-	if len(os.Args) < 2 {
-		log.Fatalf("repl is not yet implemented, pass any source file or use --help")
-	}
+	// if len(os.Args) < 2 {
+	// 	log.Fatalf("repl is not yet implemented, pass any source file or use --help")
+	// }
 
 	run()
 }
@@ -34,13 +34,13 @@ func interp(filename string) {
 }
 
 func run() {
-	file := flag.String("i", "", "source file")
+	// file := flag.String("i", "", "source file")
 	listTranspiler := flag.Bool("ls", false, "list all transpilation options")
 	flag.Parse()
 
-	if *file != "" {
-		interp(*file)
-	}
+	interp("./examples/02.txt")
+	// if *file != "" {
+	// }
 
 	if *listTranspiler {
 		transpiler.New().Help()

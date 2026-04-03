@@ -82,6 +82,10 @@ func (p *Parser) peekTokenBindingPower() bindingPower {
 	return bindingPowerLookup[p.peekToken.Value]
 }
 
+func (p *Parser) currentTokenBindingPower() bindingPower {
+	return bindingPowerLookup[p.currentToken.Value]
+}
+
 func (p *Parser) peekTokenIs(k tokens.TokenKind) bool {
 	if p.peekToken.Kind != k {
 		return false
@@ -114,7 +118,6 @@ func (p *Parser) expectPeekToBe(k tokens.TokenKind) bool {
 		lineIssue := utils.ReadSourceAsLines(line)
 		p.isEndOfFetch()
 
-    // fmt.Printf("%c[%dmHELLO!\n", 0x1B, 32);
 		fmt.Printf("Parser:%d:%d: encouter error at line:\n %s\n", line-1,
 			p.currentToken.Pos.End,
 			lineIssue)
@@ -136,9 +139,14 @@ func (p *Parser) parseStringLiteral() ast.Expression {
 }
 
 func (p *Parser) parseBinaryExpression(lhs ast.Expression) ast.Expression {
-	fmt.Printf("Infix is not supported\n") // NOTE:
+	expr := &ast.BinaryExpression{
+		Operator: p.currentToken,
+		Left: lhs,
+	}
+	bp := p.currentTokenBindingPower()
 	p.advanceTokens()
-	return nil
+	expr.Right = p.parseExpression(bp)
+	return expr
 }
 
 func (p *Parser) parseStmt() ast.Statement {
@@ -198,12 +206,20 @@ func (p *Parser) parseFetchBody() ast.Statement {
 
 func (p *Parser) parseExpression(bp bindingPower) ast.Expression {
 	prefix := prefixLookup[p.currentToken.Kind]
+	if prefix == nil {
+		// p.noPrefixFoundErr(p.currentToken) TODO:
+		log.Fatalf("Prefix not founded: %s\n", p.currentToken.Value)
+		return nil
+	}
 	left := prefix()
 
 	for !p.peekTokenIs(tokens.SEMI_COLON) && bp < p.peekTokenBindingPower() {
 		infix := infixLookup[p.peekToken.Kind]
+		if infix == nil {
+			return left
+		}
+		p.advanceTokens()
 		left = infix(left)
 	}
-
 	return left
 }

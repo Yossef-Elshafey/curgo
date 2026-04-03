@@ -81,3 +81,18 @@ func (ca *CurgoAssignStatment) Stringify() string {
 	out.WriteString(ca.Value.Stringify())
 	return out.String()
 }
+
+type BinaryExpression struct {
+	Left Expression
+	Operator lexer.Token
+	Right Expression
+}
+
+func (br *BinaryExpression) iExpr() {}
+func (br *BinaryExpression) Stringify() string {
+	var out bytes.Buffer
+	out.WriteString(br.Left.Stringify())
+	out.WriteString("->")
+	out.WriteString(br.Right.Stringify())
+	return out.String()
+}
