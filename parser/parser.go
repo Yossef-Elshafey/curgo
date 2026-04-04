@@ -17,9 +17,15 @@ type Parser struct {
 }
 
 type (
-	bindingPower  int
-	infixParseFn  func(ast.Expression) ast.Expression
-	prefixParseFn func() ast.Expression
+	bindingPower   int
+	infixParseFn   func(ast.Expression)  ast.Expression
+	prefixParseFn  func()                ast.Expression
+	PARSERSIG      int
+)
+
+const (
+	TERM PARSERSIG = iota
+	IGNORE PARSERSIG = iota
 )
 
 const (
@@ -27,8 +33,6 @@ const (
 	SUM
 	PRODUCT
 )
-
-// NOTE: prefix and infix in not used currently since there is no response(curl output) operations
 
 var bindingPowerLookup = map[string]bindingPower{
 	"+": SUM,
@@ -51,6 +55,7 @@ func Parse(t []lexer.Token) *ast.Program {
 		program.Statements = append(program.Statements, stmt)
 		p.advanceTokens()
 	}
+	fmt.Printf("%+v\n", program.Statements[0].(*ast.LetStatement).Value)
 	return program
 }
 
@@ -86,6 +91,8 @@ func (p *Parser) currentTokenBindingPower() bindingPower {
 	return bindingPowerLookup[p.currentToken.Value]
 }
 
+// NOTE: peekTokenIs, expectPeekToBe the way peek check handled is foolish
+// implement peek token check such that errors, token advancing is clear
 func (p *Parser) peekTokenIs(k tokens.TokenKind) bool {
 	if p.peekToken.Kind != k {
 		return false
@@ -112,19 +119,23 @@ func (p *Parser) isEndOfFetch() {
 	}
 }
 
-func (p *Parser) expectPeekToBe(k tokens.TokenKind) bool {
+// 
+func (p *Parser) expectPeekToBe(k tokens.TokenKind, sig PARSERSIG) bool {
 	if p.peekToken.Kind != k {
 		line := p.peekToken.Pos.Line
 		lineIssue := utils.ReadSourceAsLines(line)
 		p.isEndOfFetch()
+		if sig == TERM {
+			fmt.Printf("Parser:%d:%d: encouter error at line:\n %s\n", line-1,
+				p.currentToken.Pos.End,
+				lineIssue)
 
-		fmt.Printf("Parser:%d:%d: encouter error at line:\n %s\n", line-1,
-			p.currentToken.Pos.End,
-			lineIssue)
+			log.Fatalf("Expect to find %s after '%s', got=%s", tokens.TokenKindStringify(k),
+				p.currentToken.Value,
+				tokens.TokenKindStringify(p.peekToken.Kind))
 
-		log.Fatalf("Expect to find %s after '%s', got=%s", tokens.TokenKindStringify(k),
-			p.currentToken.Value,
-			tokens.TokenKindStringify(p.peekToken.Kind))
+		}
+		return false
 	}
 	p.advanceTokens()
 	return true
@@ -153,15 +164,31 @@ func (p *Parser) parseStmt() ast.Statement {
 	switch p.currentToken.Kind {
 	case tokens.FETCH:
 		return p.parseFetchStatment()
+	case tokens.LET:
+		return p.parseLetStmt()
 	default:
 		return nil
 	}
 }
 
+func (p *Parser) parseLetStmt() *ast.LetStatement {
+	if !p.expectPeekToBe(tokens.IDENTIFIER, TERM) {return nil}
+	ls := &ast.LetStatement{}
+	ls.Identifier = &ast.Identifier{Token: p.currentToken, Value: p.currentToken.Value}
+	if !p.expectPeekToBe(tokens.EQUAL, IGNORE) {
+		if !p.expectPeekToBe(tokens.SEMI_COLON, TERM) {return nil}
+		return ls
+	}
+	p.advanceTokens()
+	ls.Value = p.parseExpression(LOWEST)
+	if !p.expectPeekToBe(tokens.SEMI_COLON, TERM) {return nil}
+	return ls
+}
+
 func (p *Parser) parseFetchStatment() *ast.FetchStmt {
 	fs := &ast.FetchStmt{Token: p.currentToken}
 	fs.Body = []ast.Statement{}
-	if !p.expectPeekToBe(tokens.IDENTIFIER) {
+	if !p.expectPeekToBe(tokens.IDENTIFIER, TERM) {
 		return nil
 	}
 
@@ -170,7 +197,7 @@ func (p *Parser) parseFetchStatment() *ast.FetchStmt {
 		Value:  p.currentToken.Value,
 	}
 
-	if !p.expectPeekToBe(tokens.COLON) {
+	if !p.expectPeekToBe(tokens.COLON, TERM) {
 		return nil
 	}
 
@@ -183,22 +210,22 @@ func (p *Parser) parseFetchStatment() *ast.FetchStmt {
 }
 
 func (p *Parser) parseFetchBody() ast.Statement {
-	if !p.expectPeekToBe(tokens.IDENTIFIER) {
+	if !p.expectPeekToBe(tokens.IDENTIFIER, TERM) {
 		return nil
 	}
 	ca := &ast.CurgoAssignStatment{}
 	ca.Arg = &ast.Identifier{Token: p.currentToken, Value: p.currentToken.Value}
-	if !p.expectPeekToBe(tokens.TRANSPILE_ASSIGN) {
+	if !p.expectPeekToBe(tokens.TRANSPILE_ASSIGN, TERM) {
 		return nil
 	}
 
-	if !p.expectPeekToBe(tokens.STRING) {
+	if !p.expectPeekToBe(tokens.STRING, TERM) {
 		return nil
 	}
 
 	ca.Value = p.parseExpression(LOWEST)
 
-	if !p.expectPeekToBe(tokens.SEMI_COLON) {
+	if !p.expectPeekToBe(tokens.SEMI_COLON, TERM) {
 		return nil
 	}
 	return ca

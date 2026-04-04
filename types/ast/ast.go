@@ -96,3 +96,17 @@ func (br *BinaryExpression) Stringify() string {
 	out.WriteString(br.Right.Stringify())
 	return out.String()
 }
+
+type LetStatement struct {
+	Identifier *Identifier
+	Value Expression
+}
+
+func (ls *LetStatement) iStmt() {}
+func (ls *LetStatement) Stringify() string {
+	var out bytes.Buffer
+	out.WriteString(ls.Identifier.Stringify())
+	out.WriteString("->")
+	out.WriteString(ls.Value.Stringify())
+	return out.String()
+}

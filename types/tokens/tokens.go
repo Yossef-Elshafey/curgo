@@ -9,6 +9,7 @@ const (
 	TRANSPILE_ASSIGN
 	STRING
 	IDENTIFIER
+	LET
 
 	SEMI_COLON
 	BACKTICK
@@ -17,6 +18,7 @@ const (
 	OPEN_CURLY
 	CLOSE_CURLY
 	COMMA
+	EQUAL
 
 	FETCH
 	DATA
@@ -31,10 +33,15 @@ var Reserved_Keyword = map[string]TokenKind{
 	"global": GLOBAL,
 	"fetch":  FETCH,
 	"endfet": ENDFETCH,
+	"let": LET,
 }
 
 func TokenKindStringify(k TokenKind) string {
 	switch k {
+	case EQUAL:
+		return "equal"
+	case LET:
+		return "let"
 	case TRANSPILE_ASSIGN:
 		return "transpile_assign"
 	case STRING:

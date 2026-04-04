@@ -149,6 +149,7 @@ func createLexer(source string) *lexer {
 			{regexp.MustCompile(`\}`), defaultHandler(tokens.CLOSE_CURLY, "}")},
 			{regexp.MustCompile(`;`), defaultHandler(tokens.SEMI_COLON, ";")},
 			{regexp.MustCompile(`:`), defaultHandler(tokens.COLON, ":")},
+			{regexp.MustCompile(`=`), defaultHandler(tokens.EQUAL, "=")},
 		},
 		source: source,
 		line:   1,
