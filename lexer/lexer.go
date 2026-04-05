@@ -78,11 +78,12 @@ func defaultHandler(kind tokens.TokenKind, value string) regexHandler {
 	}
 }
 
-// func numberHandler(lex *lexer, regex *regexp.Regexp) {
-// 	match := regex.FindString(lex.remainder())
-// 	lex.push(NewToken(NUMBER, match))
-// 	lex.shift(len(match))
-// }
+func numberHandler(lex *lexer, regex *regexp.Regexp, loc []int) {
+	match := regex.FindString(lex.remainder())
+	line, start, end := lex.getPositions(loc[1])
+	lex.push(NewToken(tokens.NUMBER, match, line, start, end))
+	lex.shift(len(match))
+}
 
 func skipHandler(lex *lexer, regex *regexp.Regexp, loc []int) {
 	skip := regex.FindString(lex.remainder())
@@ -142,7 +143,7 @@ func createLexer(source string) *lexer {
 			{regexp.MustCompile(`\n`), newLineHandler},
 			{regexp.MustCompile(`\s+`), skipHandler},
 			{regexp.MustCompile(`\/\/.*`), skipHandler},
-			// {regexp.MustCompile(`[0-9]+(\.[0-9]+)?`), numberHandler},
+			{regexp.MustCompile(`[0-9]+(\.[0-9]+)?`), numberHandler},
 			{regexp.MustCompile(`\{`), defaultHandler(tokens.OPEN_CURLY, "{")},
 			{regexp.MustCompile(`\+`), defaultHandler(tokens.PLUS, "+")},
 			{regexp.MustCompile(`,`), defaultHandler(tokens.COMMA, ",")},
@@ -150,6 +151,8 @@ func createLexer(source string) *lexer {
 			{regexp.MustCompile(`;`), defaultHandler(tokens.SEMI_COLON, ";")},
 			{regexp.MustCompile(`:`), defaultHandler(tokens.COLON, ":")},
 			{regexp.MustCompile(`=`), defaultHandler(tokens.EQUAL, "=")},
+			{regexp.MustCompile(`\(`), defaultHandler(tokens.OPEN_PAREN, "(")},
+			{regexp.MustCompile(`\)`), defaultHandler(tokens.CLOSE_PAREN, ")")},
 		},
 		source: source,
 		line:   1,
@@ -167,8 +170,6 @@ func createLexer(source string) *lexer {
 // 	{regexp.MustCompile(`\]`), defaultHandler(CLOSE_BRACKET, "]")},
 // 	{regexp.MustCompile(`\{`), defaultHandler(OPEN_CURLY, "{")},
 // 	{regexp.MustCompile(`\}`), defaultHandler(CLOSE_CURLY, "}")},
-// 	{regexp.MustCompile(`\(`), defaultHandler(OPEN_PAREN, "(")},
-// 	{regexp.MustCompile(`\)`), defaultHandler(CLOSE_PAREN, ")")},
 // 	{regexp.MustCompile(`==`), defaultHandler(EQUALS, "==")},
 // 	{regexp.MustCompile(`!=`), defaultHandler(NOT_EQUALS, "!=")},
 // 	{regexp.MustCompile(`=`), defaultHandler(ASSIGNMENT, "=")},

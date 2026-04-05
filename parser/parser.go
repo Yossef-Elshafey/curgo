@@ -7,6 +7,7 @@ import (
 	"curgo/utils"
 	"fmt"
 	"log"
+	"strconv"
 )
 
 type Parser struct {
@@ -32,6 +33,7 @@ const (
 	LOWEST bindingPower = iota
 	SUM
 	PRODUCT
+	CALL
 )
 
 var bindingPowerLookup = map[string]bindingPower{
@@ -39,6 +41,7 @@ var bindingPowerLookup = map[string]bindingPower{
 	"-": SUM,
 	"*": PRODUCT,
 	"/": PRODUCT,
+	"(": CALL,
 }
 
 var prefixLookup = map[tokens.TokenKind]prefixParseFn{}
@@ -52,10 +55,11 @@ func Parse(t []lexer.Token) *ast.Program {
 	program := &ast.Program{}
 	for !p.peekTokenIs(tokens.EOF) {
 		stmt := p.parseStmt()
-		program.Statements = append(program.Statements, stmt)
+		if stmt != nil {
+			program.Statements = append(program.Statements, stmt)
+		}
 		p.advanceTokens()
 	}
-	fmt.Printf("%+v\n", program.Statements[0].(*ast.LetStatement).Value)
 	return program
 }
 
@@ -69,10 +73,13 @@ func (p *Parser) initPrefix() {
 	p.registerPrefix(tokens.IDENTIFIER, p.parseIdentifier)
 	p.registerPrefix(tokens.STRING,     p.parseStringLiteral)
 	p.registerPrefix(tokens.BACKTICK,   p.parseStringLiteral)
+	p.registerPrefix(tokens.NUMBER, p.parseNumberLiteral)
+	p.registerPrefix(tokens.OPEN_PAREN, p.parseGroupedExpression)
 }
 
 func (p *Parser) initInfix() {
 	p.registerInfix(tokens.PLUS, p.parseBinaryExpression)
+	p.registerInfix(tokens.OPEN_PAREN, p.parseCallExpression)
 }
 
 func (p *Parser) registerPrefix(k tokens.TokenKind, handler prefixParseFn) {
@@ -167,9 +174,10 @@ func (p *Parser) parseStmt() ast.Statement {
 	case tokens.LET:
 		return p.parseLetStmt()
 	default:
-		return nil
+		return p.parseExpressionStatement()
 	}
 }
+
 
 func (p *Parser) parseLetStmt() *ast.LetStatement {
 	if !p.expectPeekToBe(tokens.IDENTIFIER, TERM) {return nil}
@@ -249,4 +257,52 @@ func (p *Parser) parseExpression(bp bindingPower) ast.Expression {
 		left = infix(left)
 	}
 	return left
+}
+
+func (p *Parser) parseNumberLiteral() ast.Expression {
+	nl := &ast.NumberLiteral{}
+	i, err := strconv.Atoi(p.currentToken.Value)
+	if err != nil {
+		log.Fatalf("Failed to convert %v to string", p.currentToken.Value)
+	}
+	nl.Value = int64(i)
+	nl.Token = p.currentToken
+	return nl
+}
+
+func (p *Parser) parseCallExpression(fs ast.Expression) ast.Expression {
+	ce := &ast.CallExpression{Token: p.currentToken, Function: fs}
+	ce.Arguments = p.parseCallArgument()
+	return ce
+}
+
+func (p *Parser) parseCallArgument() []ast.Expression {
+	args := []ast.Expression{}
+	if p.peekTokenIs(tokens.CLOSE_PAREN) {
+		p.advanceTokens()
+		return args
+	}
+	p.advanceTokens()
+	args = append(args, p.parseExpression(LOWEST))
+	for p.peekTokenIs(tokens.COMMA) {
+		p.advanceTokens()
+		p.advanceTokens()
+		args = append(args, p.parseExpression(LOWEST))
+	}
+	if !p.expectPeekToBe(tokens.CLOSE_PAREN, TERM) { return nil }
+	p.advanceTokens()
+	return args
+}
+
+func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
+	es := &ast.ExpressionStatement{}
+	es.Expression = p.parseExpression(LOWEST)
+	return es
+}
+
+func (p *Parser) parseGroupedExpression() ast.Expression {
+	p.advanceTokens()
+	exp := p.parseExpression(LOWEST)
+	if !p.expectPeekToBe(tokens.CLOSE_PAREN, TERM) { return nil }
+	return exp
 }

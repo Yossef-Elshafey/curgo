@@ -3,6 +3,7 @@ package ast
 import (
 	"bytes"
 	"curgo/lexer"
+	"fmt"
 )
 
 type Node interface {
@@ -92,7 +93,7 @@ func (br *BinaryExpression) iExpr() {}
 func (br *BinaryExpression) Stringify() string {
 	var out bytes.Buffer
 	out.WriteString(br.Left.Stringify())
-	out.WriteString("->")
+	out.WriteString(br.Operator.Value)
 	out.WriteString(br.Right.Stringify())
 	return out.String()
 }
@@ -105,8 +106,52 @@ type LetStatement struct {
 func (ls *LetStatement) iStmt() {}
 func (ls *LetStatement) Stringify() string {
 	var out bytes.Buffer
+	out.WriteString("let")
 	out.WriteString(ls.Identifier.Stringify())
-	out.WriteString("->")
+	out.WriteString("=")
 	out.WriteString(ls.Value.Stringify())
+	return out.String()
+}
+
+type ExpressionStatement struct {
+	Token lexer.Token
+	Expression Expression
+}
+
+func (es *ExpressionStatement) iStmt() {}
+func (es *ExpressionStatement) Stringify() string {
+	var out bytes.Buffer
+	out.WriteString(es.Expression.Stringify())
+	return out.String()
+}
+
+type CallExpression struct {
+	Token lexer.Token
+	Function Expression
+	Arguments []Expression
+}
+
+func (ce *CallExpression) iExpr() {}
+func (ce *CallExpression) Stringify() string {
+	var out bytes.Buffer
+	out.WriteString(ce.Function.Stringify())
+	out.WriteString("(")
+	for arg := range ce.Arguments {
+		out.WriteString(ce.Arguments[arg].Stringify())
+	}
+	out.WriteString(")")
+	return out.String()
+}
+
+type NumberLiteral struct {
+	Token lexer.Token
+	Value int64
+}
+
+func (nl *NumberLiteral) iExpr() {}
+func (nl *NumberLiteral) Stringify() string {
+	var out bytes.Buffer
+	s := fmt.Sprintf("%d", nl.Value)
+	out.WriteString(s)
 	return out.String()
 }

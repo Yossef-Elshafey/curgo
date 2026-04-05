@@ -7,10 +7,15 @@ type TokenKind int
 const (
 	_ TokenKind = iota
 	TRANSPILE_ASSIGN
+
 	STRING
+	NUMBER 
+
 	IDENTIFIER
 	LET
 
+	OPEN_PAREN
+	CLOSE_PAREN
 	SEMI_COLON
 	BACKTICK
 	PLUS
@@ -38,6 +43,12 @@ var Reserved_Keyword = map[string]TokenKind{
 
 func TokenKindStringify(k TokenKind) string {
 	switch k {
+	case OPEN_PAREN:
+		return "open_paren"
+	case CLOSE_PAREN:
+		return "close_paren"
+	case NUMBER:
+		return "number"
 	case EQUAL:
 		return "equal"
 	case LET:
