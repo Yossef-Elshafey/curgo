@@ -108,13 +108,6 @@ func (p *Parser) peekTokenIs(k tokens.TokenKind) bool {
 	return true
 }
 
-func (p *Parser) currentTokenIs(k tokens.TokenKind) bool {
-	if p.currentToken.Kind != k {
-		return false
-	}
-	return true
-}
-
 func (p *Parser) advanceTokens() {
 	p.currentToken = p.peekToken
 	p.peekToken = p.tokens[p.position]
