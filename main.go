@@ -1,6 +1,7 @@
 package main
 
 import (
+	"curgo/eval"
 	"curgo/lexer"
 	"curgo/parser"
 	"curgo/transpiler"
@@ -28,8 +29,8 @@ func interp(filename string) {
 	source := string(f)
 	utils.SetSource(source)
 	tokens := lexer.Tokenize(source)
-	parser.Parse(tokens)
-	// eval.Eval(p)
+	p := parser.Parse(tokens)
+	eval.Eval(p)
 }
 
 func run() {

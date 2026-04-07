@@ -100,8 +100,16 @@ func (p *Parser) currentTokenBindingPower() bindingPower {
 
 // NOTE: peekTokenIs, expectPeekToBe the way peek check handled is foolish
 // implement peek token check such that errors, token advancing is clear
+// Seperate the error messages in different function
 func (p *Parser) peekTokenIs(k tokens.TokenKind) bool {
 	if p.peekToken.Kind != k {
+		return false
+	}
+	return true
+}
+
+func (p *Parser) currentTokenIs(k tokens.TokenKind) bool {
+	if p.currentToken.Kind != k {
 		return false
 	}
 	return true
@@ -178,7 +186,6 @@ func (p *Parser) parseStmt() ast.Statement {
 	}
 }
 
-
 func (p *Parser) parseLetStmt() *ast.LetStatement {
 	if !p.expectPeekToBe(tokens.IDENTIFIER, TERM) {return nil}
 	ls := &ast.LetStatement{}
@@ -196,6 +203,8 @@ func (p *Parser) parseLetStmt() *ast.LetStatement {
 func (p *Parser) parseFetchStatment() *ast.FetchStmt {
 	fs := &ast.FetchStmt{Token: p.currentToken}
 	fs.Body = []ast.Statement{}
+	fs.Arguments = []*ast.Identifier{}
+
 	if !p.expectPeekToBe(tokens.IDENTIFIER, TERM) {
 		return nil
 	}
@@ -205,9 +214,10 @@ func (p *Parser) parseFetchStatment() *ast.FetchStmt {
 		Value:  p.currentToken.Value,
 	}
 
-	if !p.expectPeekToBe(tokens.COLON, TERM) {
-		return nil
-	}
+	p.advanceTokens()
+	fs.Arguments = p.parseFetchArguments()
+
+	if !p.expectPeekToBe(tokens.COLON, TERM) { return nil }
 
 	for !p.peekTokenIs(tokens.ENDFETCH) {
 		fs.Body = append(fs.Body, p.parseFetchBody())
@@ -215,6 +225,26 @@ func (p *Parser) parseFetchStatment() *ast.FetchStmt {
 
 	p.advanceTokens()
 	return fs
+}
+
+func (p *Parser) parseFetchArguments() []*ast.Identifier {
+	args := []*ast.Identifier{}
+	if p.peekTokenIs(tokens.CLOSE_PAREN) {
+		p.advanceTokens()
+		return args
+	}
+	p.advanceTokens()
+	arg := &ast.Identifier{Token: p.currentToken, Value: p.currentToken.Value}
+
+	args = append(args, arg)
+	for p.peekTokenIs(tokens.COMMA) {
+		p.advanceTokens()
+		p.advanceTokens()
+		arg = &ast.Identifier{Token: p.currentToken, Value: p.currentToken.Value}
+		args = append(args, arg)
+	}
+	if !p.expectPeekToBe(tokens.CLOSE_PAREN, TERM) { return nil }
+	return args
 }
 
 func (p *Parser) parseFetchBody() ast.Statement {
@@ -226,11 +256,7 @@ func (p *Parser) parseFetchBody() ast.Statement {
 	if !p.expectPeekToBe(tokens.TRANSPILE_ASSIGN, TERM) {
 		return nil
 	}
-
-	if !p.expectPeekToBe(tokens.STRING, TERM) {
-		return nil
-	}
-
+	p.advanceTokens()
 	ca.Value = p.parseExpression(LOWEST)
 
 	if !p.expectPeekToBe(tokens.SEMI_COLON, TERM) {

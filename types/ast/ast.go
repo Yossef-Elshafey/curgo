@@ -43,6 +43,7 @@ func (i *Identifier) Stringify() string {
 type FetchStmt struct {
 	Token lexer.Token
 	FetchIdentifier  *Identifier
+	Arguments []*Identifier
 	Body  []Statement
 }
 

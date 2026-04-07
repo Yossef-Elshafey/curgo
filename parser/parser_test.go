@@ -6,20 +6,45 @@ import (
 	"testing"
 )
 
-
 func TestProgram(t *testing.T) {
 	source := `
-	fetch user: 
-	endfet `
+	fetch user(id, payload): 
+	  host    ->  "localhost:8888/" + id;
+	  header  ->  "Content-Type:application/json";
+	  method  ->  "POST"; 
+	  data    ->  payload;
+	endfet
+	let foo = "bar";
+	user(foo, "x");
+	`
+	tokens := lexer.Tokenize(source)
+	p := Parse(tokens)
+	testNumberOfStatments(t, len(p.Statements), 3)
+	fs, ok := p.Statements[0].(*ast.FetchStmt)
+	if !ok {t.Errorf("program.Statements[0] is not FetchStmt, got= %T", p.Statements[0])}
+	b1 := fs.Body[0].(*ast.CurgoAssignStatment)
+	testInfix(t, b1.Value, "localhost:8888/", "+", "id")
+	b4 := fs.Body[3].(*ast.CurgoAssignStatment)
+	testIdentifier(t, b4.Value, "payload")
+}
+
+func TestFetchStatement(t *testing.T) {
+	source := `
+	fetch user(id, payload): 
+	  host    ->  "localhost:8888" + "/foo" + "/bar";
+	  header  ->  "Content-Type:application/json";
+	  method  ->  "POST"; 
+	  data    ->`  + "`{'fname': 'lname'}`;" + "endfet"
+
 	tokens := lexer.Tokenize(source)
 	p := Parse(tokens)
 	testNumberOfStatments(t, len(p.Statements), 1)
 	fs, ok := p.Statements[0].(*ast.FetchStmt)
 	if !ok {
-		t.Errorf("Program.Statements[0] is not ast.FetchStmt, got= %T", p.Statements[0])
+		t.Errorf("Program.Statements[0] is not FetchStmt, got= %T", p.Statements[0])
 	}
-	if fs.FetchIdentifier.Value != "user" {
-		t.Errorf("FetchStmt.FetchIdentifier != user, got=%s", fs.FetchIdentifier.Value)
+	if len( fs.Arguments ) != 2 {
+		t.Errorf("Expect FetchStmt Arguments to be 0, got= %d", len(fs.Arguments))
 	}
 }
 
@@ -30,7 +55,7 @@ func TestLetStatment(t *testing.T) {
 	testNumberOfStatments(t, len(p.Statements), 1)
 	ls, ok := p.Statements[0].(*ast.LetStatement)
 	if !ok {
-		t.Errorf("program.Statements[0] is not LetStatement, got= %t", p.Statements[0])
+		t.Errorf("program.Statements[0] is not LetStatement, got= %T", p.Statements[0])
 	}
 	testIdentifier(t, ls.Identifier, "i")
 	testInfix(t, ls.Value, 2, "+", 3)
@@ -43,11 +68,11 @@ func TestCallExpression(t *testing.T) {
 	testNumberOfStatments(t, len(p.Statements), 1)
 	es, ok := p.Statements[0].(*ast.ExpressionStatement)
 	if !ok {
-		t.Errorf("Expect program.Statements[0] to be ExpressionStatement, got=%t", p.Statements[0])
+		t.Errorf("Expect program.Statements[0] to be ExpressionStatement, got=%T", p.Statements[0])
 	}
 	ce := es.Expression.(*ast.CallExpression)
 	if len(ce.Arguments) != 4 {
-		t.Errorf("CallExpression.Arguments number does not match expected got=%d, want=%d", len(ce.Arguments), 3)
+		t.Errorf("CallExpression.Arguments number does not match expected got=%d, want=%d", len(ce.Arguments), 4)
 	}
 	testLiteralExpression(t, ce.Arguments[0], 1) 
 	testInfix(t, ce.Arguments[1], 2, "+", 3) 
@@ -64,7 +89,7 @@ func testInfix(
 ) bool {
 	bExp, ok := exp.(*ast.BinaryExpression)
 	if !ok {
-		t.Errorf("exp is not BinaryExpression, got=%t", exp)
+		t.Errorf("exp is not BinaryExpression, got=%T", exp)
 	}
 
 	if !testLiteralExpression(t, bExp.Left, lhs) {
@@ -103,7 +128,7 @@ func testLiteralExpression(
 func testIntegerLiteral(t *testing.T, exp ast.Expression, value int64) bool {
 	il, ok := exp.(*ast.NumberLiteral)
 	if !ok {
-		t.Errorf("expect exp to be NumberLiteral, got= %t", exp)
+		t.Errorf("expect exp to be NumberLiteral, got= %T", exp)
 		return false
 	}
 	if il.Value != value {
@@ -115,8 +140,11 @@ func testIntegerLiteral(t *testing.T, exp ast.Expression, value int64) bool {
 func testStringLiteral(t *testing.T, exp ast.Expression, value string) bool {
 	sl, ok := exp.(*ast.StringLiteral)
 	if !ok {
-		t.Errorf("expect exp to be StringLiteral, got= %t", exp)
-		return false
+		if !testIdentifier(t, exp, value) {
+			t.Errorf("expect exp to be StringLiteral, got= %T", exp)
+			return false
+		}
+		return true
 	}
 	if sl.Value != value {
 		t.Errorf("Expect NumberLiteral to be %s, got= %s", value, sl.Value)
@@ -127,7 +155,7 @@ func testStringLiteral(t *testing.T, exp ast.Expression, value string) bool {
 func testIdentifier(t *testing.T, exp ast.Expression, value string) bool {
 	ident, ok := exp.(*ast.Identifier)
 	if !ok {
-		t.Errorf("expect exp to be Identifier, got= %t", exp)
+		t.Errorf("expect exp to be Identifier, got= %T", exp)
 		return false
 	}
 	if ident.Value != value {
