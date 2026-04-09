@@ -1,6 +1,7 @@
 package main
 
 import (
+	"curgo/environment"
 	"curgo/eval"
 	"curgo/lexer"
 	"curgo/parser"
@@ -30,7 +31,8 @@ func interp(filename string) {
 	utils.SetSource(source)
 	tokens := lexer.Tokenize(source)
 	p := parser.Parse(tokens)
-	eval.Eval(p)
+	env := environment.New()
+	eval.Eval(p,env)
 }
 
 func run() {

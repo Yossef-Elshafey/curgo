@@ -25,11 +25,6 @@ type (
 )
 
 const (
-	TERM PARSERSIG = iota
-	IGNORE PARSERSIG = iota
-)
-
-const (
 	LOWEST bindingPower = iota
 	SUM
 	PRODUCT
@@ -70,11 +65,11 @@ func (p *Parser) initParser() {
 }
 
 func (p *Parser) initPrefix() {
-	p.registerPrefix(tokens.IDENTIFIER, p.parseIdentifier)
-	p.registerPrefix(tokens.STRING,     p.parseStringLiteral)
-	p.registerPrefix(tokens.BACKTICK,   p.parseStringLiteral)
-	p.registerPrefix(tokens.NUMBER, p.parseNumberLiteral)
-	p.registerPrefix(tokens.OPEN_PAREN, p.parseGroupedExpression)
+	p.registerPrefix(tokens.IDENTIFIER,  p.parseIdentifier)
+	p.registerPrefix(tokens.STRING,      p.parseStringLiteral)
+	p.registerPrefix(tokens.BACKTICK,    p.parseStringLiteral)
+	p.registerPrefix(tokens.NUMBER,      p.parseNumberLiteral)
+	p.registerPrefix(tokens.OPEN_PAREN,  p.parseGroupedExpression)
 }
 
 func (p *Parser) initInfix() {
@@ -127,22 +122,19 @@ func (p *Parser) isEndOfFetch() {
 	}
 }
 
-// 
-func (p *Parser) expectPeekToBe(k tokens.TokenKind, sig PARSERSIG) bool {
+func (p *Parser) expectPeekToBe(k tokens.TokenKind) bool {
 	if p.peekToken.Kind != k {
 		line := p.peekToken.Pos.Line
 		lineIssue := utils.ReadSourceAsLines(line)
 		p.isEndOfFetch()
-		if sig == TERM {
-			fmt.Printf("Parser:%d:%d: encouter error at line:\n %s\n", line-1,
-				p.currentToken.Pos.End,
-				lineIssue)
+		fmt.Printf("Parser:%d:%d: encouter error at line:\n %s\n", line-1,
+			p.currentToken.Pos.End,
+			lineIssue)
 
-			log.Fatalf("Expect to find %s after '%s', got=%s", tokens.TokenKindStringify(k),
-				p.currentToken.Value,
-				tokens.TokenKindStringify(p.peekToken.Kind))
+		log.Fatalf("Expect to find %s after '%s', got=%s", tokens.TokenKindStringify(k),
+			p.currentToken.Value,
+			tokens.TokenKindStringify(p.peekToken.Kind))
 
-		}
 		return false
 	}
 	p.advanceTokens()
@@ -180,16 +172,13 @@ func (p *Parser) parseStmt() ast.Statement {
 }
 
 func (p *Parser) parseLetStmt() *ast.LetStatement {
-	if !p.expectPeekToBe(tokens.IDENTIFIER, TERM) {return nil}
+	if !p.expectPeekToBe(tokens.IDENTIFIER) {return nil}
 	ls := &ast.LetStatement{}
 	ls.Identifier = &ast.Identifier{Token: p.currentToken, Value: p.currentToken.Value}
-	if !p.expectPeekToBe(tokens.EQUAL, IGNORE) {
-		if !p.expectPeekToBe(tokens.SEMI_COLON, TERM) {return nil}
-		return ls
-	}
+	if !p.expectPeekToBe(tokens.EQUAL) { }
 	p.advanceTokens()
 	ls.Value = p.parseExpression(LOWEST)
-	if !p.expectPeekToBe(tokens.SEMI_COLON, TERM) {return nil}
+	if !p.expectPeekToBe(tokens.SEMI_COLON) {return nil}
 	return ls
 }
 
@@ -198,7 +187,7 @@ func (p *Parser) parseFetchStatment() *ast.FetchStmt {
 	fs.Body = []ast.Statement{}
 	fs.Arguments = []*ast.Identifier{}
 
-	if !p.expectPeekToBe(tokens.IDENTIFIER, TERM) {
+	if !p.expectPeekToBe(tokens.IDENTIFIER) {
 		return nil
 	}
 
@@ -210,7 +199,7 @@ func (p *Parser) parseFetchStatment() *ast.FetchStmt {
 	p.advanceTokens()
 	fs.Arguments = p.parseFetchArguments()
 
-	if !p.expectPeekToBe(tokens.COLON, TERM) { return nil }
+	if !p.expectPeekToBe(tokens.COLON) { return nil }
 
 	for !p.peekTokenIs(tokens.ENDFETCH) {
 		fs.Body = append(fs.Body, p.parseFetchBody())
@@ -236,23 +225,23 @@ func (p *Parser) parseFetchArguments() []*ast.Identifier {
 		arg = &ast.Identifier{Token: p.currentToken, Value: p.currentToken.Value}
 		args = append(args, arg)
 	}
-	if !p.expectPeekToBe(tokens.CLOSE_PAREN, TERM) { return nil }
+	if !p.expectPeekToBe(tokens.CLOSE_PAREN) { return nil }
 	return args
 }
 
 func (p *Parser) parseFetchBody() ast.Statement {
-	if !p.expectPeekToBe(tokens.IDENTIFIER, TERM) {
+	if !p.expectPeekToBe(tokens.IDENTIFIER) {
 		return nil
 	}
 	ca := &ast.CurgoAssignStatment{}
 	ca.Arg = &ast.Identifier{Token: p.currentToken, Value: p.currentToken.Value}
-	if !p.expectPeekToBe(tokens.TRANSPILE_ASSIGN, TERM) {
+	if !p.expectPeekToBe(tokens.TRANSPILE_ASSIGN) {
 		return nil
 	}
 	p.advanceTokens()
 	ca.Value = p.parseExpression(LOWEST)
 
-	if !p.expectPeekToBe(tokens.SEMI_COLON, TERM) {
+	if !p.expectPeekToBe(tokens.SEMI_COLON) {
 		return nil
 	}
 	return ca
@@ -308,20 +297,20 @@ func (p *Parser) parseCallArgument() []ast.Expression {
 		p.advanceTokens()
 		args = append(args, p.parseExpression(LOWEST))
 	}
-	if !p.expectPeekToBe(tokens.CLOSE_PAREN, TERM) { return nil }
-	p.advanceTokens()
+	if !p.expectPeekToBe(tokens.CLOSE_PAREN) { return nil }
 	return args
 }
 
 func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
 	es := &ast.ExpressionStatement{}
 	es.Expression = p.parseExpression(LOWEST)
+	if p.peekTokenIs(tokens.SEMI_COLON) { p.advanceTokens() }
 	return es
 }
 
 func (p *Parser) parseGroupedExpression() ast.Expression {
 	p.advanceTokens()
 	exp := p.parseExpression(LOWEST)
-	if !p.expectPeekToBe(tokens.CLOSE_PAREN, TERM) { return nil }
+	if !p.expectPeekToBe(tokens.CLOSE_PAREN) { return nil }
 	return exp
 }
