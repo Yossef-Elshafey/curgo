@@ -1,33 +1,28 @@
 package eval
 
 import (
-	"bytes"
-	"curgo/environment"
 	"curgo/transpiler"
 	"curgo/types/ast"
 	"curgo/types/object"
 	"fmt"
-	"log"
-	"os/exec"
-	"strings"
 )
 
 type Evaluater struct {
 	transpiler *transpiler.CurlTranspiler
 }
 
-func Eval(node ast.Node, env *environment.Env) object.Object {
+func Eval(node ast.Node, env *object.Env) object.Object {
 	e := &Evaluater{}
 	e.transpiler = transpiler.New()
 	switch node := node.(type) {
-	case *ast.Program: e.evalProgram(node, env)
+	case *ast.Program: return e.evalProgram(node, env)
 
 	case *ast.FetchStmt:
 		ff := &object.FetchFunction{}
 		ff.Body = node.Body
 		ff.Params = node.Arguments
 		env.Set(node.FetchIdentifier.Value, ff)
-		return nil
+		return ff
 
 	case *ast.CallExpression:
 		function := Eval(node.Function, env)
@@ -39,13 +34,14 @@ func Eval(node ast.Node, env *environment.Env) object.Object {
 			return args[0]
 		}
 
-		return applyFunction(function, args, env)
+		return applyFunction(function, args)
 
 	case *ast.LetStatement: 
 		v := Eval(node.Value, env)
-		if v ==  nil { panic("Let stmt value is nil") }
+		if isError(v) {
+			return v
+		}
 		env.Set(node.Identifier.Token.Value, v)
-		return nil
 
 	case *ast.BinaryExpression:
 		left := Eval(node.Left, env)
@@ -60,7 +56,9 @@ func Eval(node ast.Node, env *environment.Env) object.Object {
 	case *ast.ExpressionStatement: return Eval(node.Expression, env)
 	case *ast.Identifier: return evalIdentifier(node, env)
 	case *ast.StringLiteral: return &object.String{Value: node.Value}
-
+	case *ast.NumberLiteral: return &object.Integer{Value: node.Value}
+	case *ast.CurgoAssignStatment:
+		Eval(node.Value, env)
 	}
 	return nil
 }
@@ -116,20 +114,34 @@ func evalIntegerInfixExpression(
 	}
 }
 
-func applyFunction(fn object.Object, args []object.Object, env *environment.Env) object.Object {
+func applyFunction(fn object.Object, args []object.Object) object.Object {
 	switch fn := fn.(type) {
-
 	case *object.FetchFunction:
-		fmt.Printf("%+v\n", fn.Body)
-		fmt.Printf("%+v\n", fn.Params[0])
-		fmt.Printf("%+v\n", args[0])
+		if len(args) != len(fn.Params) {
+			return newError("expects %d argument, got= %d", len(fn.Params), len(args) )
+		}
+		extendedEnv := extendFunctionEnv(fn, args)
+		for _, stmt := range fn.Body {
+			Eval(stmt, extendedEnv)
+		}
 	}
 	return newError("not a function: %T", fn)
 }
 
+func extendFunctionEnv(
+	fn *object.FetchFunction,
+	args []object.Object,
+) *object.Env {
+	env := object.NewOuterEnv(fn.Env)
+	for idx, param := range fn.Params {
+		env.Set(param.Value, args[idx])
+	}
+	return env
+}
+
 func evalExpressions(
 	exps []ast.Expression,
-	env *environment.Env,
+	env *object.Env,
 ) []object.Object {
 	var result []object.Object
 
@@ -157,37 +169,24 @@ func newError(format string, a ...interface{}) *object.Error {
 
 func evalIdentifier(
 	node *ast.Identifier,
-	env *environment.Env,
+	env *object.Env,
 ) object.Object {
 	if val, ok := env.Get(node.Value); ok {
 		return val
 	}
-
-	return newError("identifier not found: " + node.Value)
+	return newError("identifier not found: %s", node.Value)
 }
 
 
-func (e *Evaluater) evalProgram(n *ast.Program, env *environment.Env) {
+func (e *Evaluater) evalProgram(n *ast.Program, env *object.Env) object.Object {
+	var result object.Object
 	for _, stmt := range n.Statements {
-		Eval(stmt, env)
+		result = Eval(stmt, env)
+
+		switch result := result.(type) {
+		case *object.Error:
+			return result
+		}
 	}
-}
-
-func (e *Evaluater) fail(msg string) {
-	log.Fatalf("%s", msg)
-}
-
-func (e *Evaluater) executeCurlCommand(title, command string) {
-	// https://www.sohamkamani.com/golang/exec-shell-command/
-	var stdout bytes.Buffer
-	cmd := exec.Command("/bin/sh", "-c", "curl"+command)
-	cmd.Stdout = &stdout
-
-	if err := cmd.Run(); err != nil {
-		fmt.Printf("Stdout: %s\n", stdout.String())
-		fmt.Printf("Command failed with %s\n", err)
-	}
-
-	fmt.Printf("Response: %s\n", stdout.String())
-	fmt.Printf("%s\n", strings.Repeat("-", 10))
+	return result
 }

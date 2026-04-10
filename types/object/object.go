@@ -1,6 +1,8 @@
 package object
 
-import "curgo/types/ast"
+import (
+	"curgo/types/ast"
+)
 
 
 type ObjectType string
@@ -17,8 +19,9 @@ type Object interface {
 }
 
 type FetchFunction struct {
-	Params []*ast.Identifier
-	Body []ast.Statement
+	Params  []*ast.Identifier
+	Body    []ast.Statement
+	Env     *Env
 }
 
 func (ff *FetchFunction) Type() ObjectType { return FUNCTION_OBJ}
