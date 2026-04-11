@@ -12,6 +12,7 @@ const (
 	ERROR_OBJ        = "ERROR"
 	FUNCTION_OBJ     = "FUNCTION"
 	STRING_OBJ       = "STRING"
+	CALLPARAM 		 = "CALLPARAM"
 )
 
 type Object interface { 
@@ -43,3 +44,10 @@ type Integer struct {
 }
 
 func (s *Integer) Type() ObjectType { return INTEGER_OBJ }
+
+type CurgoCall struct {
+	Key    string
+	Value  Object
+}
+
+func (cc *CurgoCall) Type() ObjectType { return CALLPARAM}

@@ -1,21 +1,15 @@
 package eval
 
 import (
-	"curgo/transpiler"
 	"curgo/types/ast"
 	"curgo/types/object"
 	"fmt"
+	"io"
 )
 
-type Evaluater struct {
-	transpiler *transpiler.CurlTranspiler
-}
-
 func Eval(node ast.Node, env *object.Env) object.Object {
-	e := &Evaluater{}
-	e.transpiler = transpiler.New()
 	switch node := node.(type) {
-	case *ast.Program: return e.evalProgram(node, env)
+	case *ast.Program: return evalProgram(node, env)
 
 	case *ast.FetchStmt:
 		ff := &object.FetchFunction{}
@@ -57,8 +51,7 @@ func Eval(node ast.Node, env *object.Env) object.Object {
 	case *ast.Identifier: return evalIdentifier(node, env)
 	case *ast.StringLiteral: return &object.String{Value: node.Value}
 	case *ast.NumberLiteral: return &object.Integer{Value: node.Value}
-	case *ast.CurgoAssignStatment:
-		Eval(node.Value, env)
+	case *ast.CurgoAssignStatment: return &object.CurgoCall{Key: node.Arg.Value, Value: Eval(node.Value, env)}
 	}
 	return nil
 }
@@ -115,18 +108,34 @@ func evalIntegerInfixExpression(
 }
 
 func applyFunction(fn object.Object, args []object.Object) object.Object {
+	cr := New()
 	switch fn := fn.(type) {
 	case *object.FetchFunction:
 		if len(args) != len(fn.Params) {
+			// TODO: preserve the token to display fetch name by its identifer
 			return newError("expects %d argument, got= %d", len(fn.Params), len(args) )
 		}
 		extendedEnv := extendFunctionEnv(fn, args)
 		for _, stmt := range fn.Body {
-			Eval(stmt, extendedEnv)
+			cp, ok := Eval(stmt, extendedEnv).(*object.CurgoCall)
+			if !ok {
+				return newError("can't evluate stmt of %T", cp)
+			}
+			val, ok := cp.Value.(*object.String)
+			if !ok {
+				newError("curgo request value is not string")
+			}
+			err := cr.buildRequest(cp.Key, val.Value)
+			if err != nil { return newError(err.Error(), nil) }
 		}
+		resp, err := cr.fire()
+		if err != nil { newError(err.Error(), nil)}
+		x, _ := io.ReadAll(resp.Body)
+		fmt.Printf("%s\n", string(x))
 	}
 	return newError("not a function: %T", fn)
 }
+
 
 func extendFunctionEnv(
 	fn *object.FetchFunction,
@@ -177,8 +186,7 @@ func evalIdentifier(
 	return newError("identifier not found: %s", node.Value)
 }
 
-
-func (e *Evaluater) evalProgram(n *ast.Program, env *object.Env) object.Object {
+func evalProgram(n *ast.Program, env *object.Env) object.Object {
 	var result object.Object
 	for _, stmt := range n.Statements {
 		result = Eval(stmt, env)

@@ -4,11 +4,8 @@ import (
 	"curgo/eval"
 	"curgo/lexer"
 	"curgo/parser"
-	"curgo/transpiler"
 	"curgo/types/object"
 	"curgo/utils"
-	"flag"
-	"fmt"
 	"log"
 	"os"
 )
@@ -33,20 +30,16 @@ func interp(filename string) {
 	tokens := lexer.Tokenize(source)
 	p := parser.Parse(tokens)
 	env := object.NewEnvironment()
-	eval := eval.Eval(p,env)
-	fmt.Printf("%+v\n", eval)
+	eval.Eval(p,env)
 }
 
 func run() {
 	// file := flag.String("i", "", "source file")
-	listTranspiler := flag.Bool("ls", false, "list all transpilation options")
-	flag.Parse()
+	// listTranspiler := flag.Bool("ls", false, "list all transpilation options")
+	// flag.Parse()
 
 	interp("./examples/02.txt")
 	// if *file != "" {
 	// }
 
-	if *listTranspiler {
-		transpiler.New().Help()
-	}
 }

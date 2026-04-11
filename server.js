@@ -1,8 +1,13 @@
 const http = require('http');
-const port = process.env.PORT || 8000;
+const port = 8000;
 
-http.createServer((req, res) => {
+http.createServer(async (req, res) => {
   if ( req.url === "/" ) {
+const sleep = (ms) => {
+  return new Promise(resolve => {
+    setTimeout(resolve, ms)
+  })
+}
 	console.log(req.headers['user-agent'])
 	console.log(req.headers['content-type'])
 	console.log(req.method)
@@ -16,5 +21,5 @@ http.createServer((req, res) => {
 	res.end()
   }
 }).listen(port, () => {
-	console.log(`App is running on port ${port}`);
+  console.log(`App is running on port ${port}`);
   });

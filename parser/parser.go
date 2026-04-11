@@ -21,7 +21,6 @@ type (
 	bindingPower   int
 	infixParseFn   func(ast.Expression)  ast.Expression
 	prefixParseFn  func()                ast.Expression
-	PARSERSIG      int
 )
 
 const (
@@ -230,7 +229,7 @@ func (p *Parser) parseFetchArguments() []*ast.Identifier {
 }
 
 func (p *Parser) parseFetchBody() ast.Statement {
-	if !p.expectPeekToBe(tokens.IDENTIFIER) {
+	if !p.expectPeekToBe(tokens.STRING) {
 		return nil
 	}
 	ca := &ast.CurgoAssignStatment{}
