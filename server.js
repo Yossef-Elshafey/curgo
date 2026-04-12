@@ -3,23 +3,13 @@ const port = 8000;
 
 http.createServer(async (req, res) => {
   if ( req.url === "/" ) {
-const sleep = (ms) => {
-  return new Promise(resolve => {
-    setTimeout(resolve, ms)
-  })
-}
-	console.log(req.headers['user-agent'])
-	console.log(req.headers['content-type'])
-	console.log(req.method)
-	res.writeHead(200, { "Content-Type": "plain/text" });
-	res.write("Hello, world!");
-  console.log(String("--").repeat(50))
+  console.log("Got call at", req.url)
 	res.end();
   }
 
   if (req.url === "/api/test") {
-	res.write("Done.")
-	res.end()
+  console.log("Got call at", req.url)
+	res.end();
   }
 }).listen(port, () => {
   console.log(`App is running on port ${port}`);

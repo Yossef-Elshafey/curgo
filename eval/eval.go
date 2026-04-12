@@ -22,6 +22,7 @@ func Eval(node ast.Node, env *object.Env) object.Object {
 		ff.Body = node.Body
 		ff.Params = node.Arguments
 		ff.Token = &node.Token
+		ff.Env = env
 		env.Set(node.FetchIdentifier.Value, ff)
 		return ff
 

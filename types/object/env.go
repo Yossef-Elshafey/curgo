@@ -10,7 +10,7 @@ func NewEnvironment() *Env {
 	return &Env{vars:vars}
 }
 
-func NewOuterEnv (outEnv *Env) *Env {
+func NewOuterEnv(outEnv *Env) *Env {
 	env := NewEnvironment()
 	env.outer = outEnv
 	return env
@@ -23,8 +23,7 @@ func (e *Env) Set(k string, v Object) {
 func (e *Env) Get(k string) ( Object, bool ) {
 	v, ok := e.vars[k] 
 	if !ok && e.outer != nil {
-		e.vars = e.outer.vars
-		e.Get(k)
+		v, ok = e.outer.Get(k)
 	}
 	return v,ok
 }
