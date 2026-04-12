@@ -1,7 +1,6 @@
 package eval
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -30,8 +29,7 @@ func (cr *CurgoRequest) build() {
 	cr.set("data",          BODY)
 	cr.set("method",        METHOD)
 	cr.set("host",          HOST)
-	cr.set("Content-Type",  HEADER)
-	cr.set("Accept",        HEADER)
+	cr.set("header",        HEADER)
 }
 
 func New() *CurgoRequest {
@@ -64,14 +62,16 @@ func (cr *CurgoRequest) buildRequest(k,v string) error {
 		cr.req, _ = http.NewRequest("GET", "http://placeholder", nil)
 	}
 	switch cr.Get(k) {
-		case HEADER: cr.req.Header.Add(k, v)
+		case HEADER: 
+			header := strings.SplitN(v, ":", 2)
+			cr.req.Header.Add(header[0], header[1])
 		case HOST:
 			url, err := url.Parse(v)
-			if err != nil { return errors.New("cannot parse request url")}
+			if err != nil { return fmt.Errorf("cannot parse request url")}
 			cr.req.URL = url
 		case METHOD: cr.req.Method = v
 		case BODY: cr.req.Body = io.NopCloser(strings.NewReader(v))
-		case NONE: return  fmt.Errorf("cant transpile %s", k)
+		case NONE: return fmt.Errorf("cant transpile %s", k)
 	}
 	return nil
 }

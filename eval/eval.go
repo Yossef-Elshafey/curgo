@@ -4,10 +4,16 @@ import (
 	"curgo/types/ast"
 	"curgo/types/object"
 	"fmt"
-	"io"
+	"net/http"
 )
 
+
+var fetches map[string]*http.Response
+
 func Eval(node ast.Node, env *object.Env) object.Object {
+	if fetches == nil {
+		fetches = make(map[string]*http.Response)
+	}
 	switch node := node.(type) {
 	case *ast.Program: return evalProgram(node, env)
 
@@ -15,6 +21,7 @@ func Eval(node ast.Node, env *object.Env) object.Object {
 		ff := &object.FetchFunction{}
 		ff.Body = node.Body
 		ff.Params = node.Arguments
+		ff.Token = &node.Token
 		env.Set(node.FetchIdentifier.Value, ff)
 		return ff
 
@@ -28,9 +35,9 @@ func Eval(node ast.Node, env *object.Env) object.Object {
 			return args[0]
 		}
 
-		return applyFunction(function, args)
+		return applyFunction(function, args, env)
 
-	case *ast.LetStatement: 
+	case *ast.LetStatement:
 		v := Eval(node.Value, env)
 		if isError(v) {
 			return v
@@ -107,31 +114,30 @@ func evalIntegerInfixExpression(
 	}
 }
 
-func applyFunction(fn object.Object, args []object.Object) object.Object {
+func applyFunction(fn object.Object, args []object.Object, env *object.Env) object.Object {
 	cr := New()
 	switch fn := fn.(type) {
-	case *object.FetchFunction:
-		if len(args) != len(fn.Params) {
-			// TODO: preserve the token to display fetch name by its identifer
-			return newError("expects %d argument, got= %d", len(fn.Params), len(args) )
-		}
-		extendedEnv := extendFunctionEnv(fn, args)
-		for _, stmt := range fn.Body {
-			cp, ok := Eval(stmt, extendedEnv).(*object.CurgoCall)
-			if !ok {
-				return newError("can't evluate stmt of %T", cp)
+		case *object.FetchFunction:
+			if len(args) != len(fn.Params) {
+				return newError("fetch %s expects %d argument, got= %d",
+					fn.Token.Value, len(fn.Params), len(args) )
 			}
-			val, ok := cp.Value.(*object.String)
-			if !ok {
-				newError("curgo request value is not string")
+			extendedEnv := extendFunctionEnv(fn, args)
+			for _, stmt := range fn.Body {
+				cp, ok := Eval(stmt, extendedEnv).(*object.CurgoCall)
+				if !ok {
+					return newError("can't evluate stmt of %T", cp)
+				}
+				val, ok := cp.Value.(*object.String)
+				if !ok { return newError("curgo request value is not string") }
+				err := cr.buildRequest(cp.Key, val.Value)
+				if err != nil { return newError(err.Error(), nil) }
 			}
-			err := cr.buildRequest(cp.Key, val.Value)
-			if err != nil { return newError(err.Error(), nil) }
-		}
-		resp, err := cr.fire()
-		if err != nil { newError(err.Error(), nil)}
-		x, _ := io.ReadAll(resp.Body)
-		fmt.Printf("%s\n", string(x))
+			resp, err := cr.fire()
+			if err != nil { return newError(err.Error(), nil)}
+			return &object.Response{Res: resp}
+		case *object.Builtin:
+			return fn.Fn(args...)
 	}
 	return newError("not a function: %T", fn)
 }
@@ -183,6 +189,11 @@ func evalIdentifier(
 	if val, ok := env.Get(node.Value); ok {
 		return val
 	}
+
+	if builtin, ok := builtins[node.Value]; ok {
+		return builtin
+	}
+
 	return newError("identifier not found: %s", node.Value)
 }
 

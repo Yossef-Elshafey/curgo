@@ -1,6 +1,5 @@
 package object
 
-
 type Env struct {
 	vars   map[string]Object
 	outer  *Env
@@ -9,6 +8,12 @@ type Env struct {
 func NewEnvironment() *Env {
 	vars := make(map[string]Object)
 	return &Env{vars:vars}
+}
+
+func NewOuterEnv (outEnv *Env) *Env {
+	env := NewEnvironment()
+	env.outer = outEnv
+	return env
 }
 
 func (e *Env) Set(k string, v Object) {
@@ -22,10 +27,4 @@ func (e *Env) Get(k string) ( Object, bool ) {
 		e.Get(k)
 	}
 	return v,ok
-}
-
-func NewOuterEnv (outEnv *Env) *Env {
-	env := NewEnvironment()
-	env.outer = outEnv
-	return env
 }

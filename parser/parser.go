@@ -229,7 +229,7 @@ func (p *Parser) parseFetchArguments() []*ast.Identifier {
 }
 
 func (p *Parser) parseFetchBody() ast.Statement {
-	if !p.expectPeekToBe(tokens.STRING) {
+	if !p.expectPeekToBe(tokens.IDENTIFIER) {
 		return nil
 	}
 	ca := &ast.CurgoAssignStatment{}

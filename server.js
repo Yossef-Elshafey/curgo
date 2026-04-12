@@ -13,6 +13,7 @@ const sleep = (ms) => {
 	console.log(req.method)
 	res.writeHead(200, { "Content-Type": "plain/text" });
 	res.write("Hello, world!");
+  console.log(String("--").repeat(50))
 	res.end();
   }
 
@@ -23,3 +24,4 @@ const sleep = (ms) => {
 }).listen(port, () => {
   console.log(`App is running on port ${port}`);
   });
+
