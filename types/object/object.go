@@ -3,7 +3,10 @@ package object
 import (
 	"curgo/lexer"
 	"curgo/types/ast"
+	"fmt"
 	"net/http"
+	"strconv"
+
 )
 
 
@@ -21,6 +24,7 @@ const (
 
 type Object interface { 
 	Type() ObjectType
+	Visit() string
 }
 
 type FetchFunction struct {
@@ -31,24 +35,30 @@ type FetchFunction struct {
 }
 
 func (ff *FetchFunction) Type() ObjectType { return FUNCTION_OBJ}
+func (ff *FetchFunction) Visit() string { 
+	return fmt.Sprintf("fetchFunction %s", ff.Token.Value)
+}
 
 type Error struct {
 	Message string
 }
 
 func (e *Error) Type() ObjectType { return ERROR_OBJ }
+func (e *Error) Visit() string {return e.Message}
 
 type String struct {
 	Value string
 }
 
 func (s *String) Type() ObjectType { return STRING_OBJ }
+func (s *String) Visit() string { return s.Value }
 
 type Integer struct {
 	Value int64
 }
 
-func (s *Integer) Type() ObjectType { return INTEGER_OBJ }
+func (i *Integer) Type() ObjectType { return INTEGER_OBJ }
+func (i *Integer) Visit() string { return strconv.Itoa(int(i.Value)) }
 
 type CurgoCall struct {
 	Key    string
@@ -56,12 +66,14 @@ type CurgoCall struct {
 }
 
 func (cc *CurgoCall) Type() ObjectType { return CALLPARAM}
+func (cc *CurgoCall) Visit() string { return fmt.Sprintf("%s -> %s", cc.Key, cc.Value )}
 
 type Response struct {
 	Res *http.Response
 }
 
 func (r *Response) Type() ObjectType { return RESPONSE}
+func (r *Response) Visit() string { return fmt.Sprintf("%+v", r.Res)}
 
 
 type BuiltinFunction func(args ...Object) Object
@@ -71,3 +83,4 @@ type Builtin struct {
 }
 
 func (b *Builtin) Type() ObjectType { return BUILTIN }
+func (b *Builtin) Visit() string { return fmt.Sprintf("fn(%+v)", b.Fn) }
