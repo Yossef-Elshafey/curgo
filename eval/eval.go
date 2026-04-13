@@ -4,16 +4,9 @@ import (
 	"curgo/types/ast"
 	"curgo/types/object"
 	"fmt"
-	"net/http"
 )
 
-
-var fetches map[string]*http.Response
-
 func Eval(node ast.Node, env *object.Env) object.Object {
-	if fetches == nil {
-		fetches = make(map[string]*http.Response)
-	}
 	switch node := node.(type) {
 	case *ast.Program: return evalProgram(node, env)
 
