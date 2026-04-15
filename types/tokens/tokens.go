@@ -1,89 +1,61 @@
-package tokens
+package token
 
-import "log"
-
-type TokenKind int
+type TokenKind string
 
 const (
-	_ TokenKind = iota
-	TRANSPILE_ASSIGN
-
-	STRING
-	NUMBER 
-
-	IDENTIFIER
-	LET
-
-	OPEN_PAREN
-	CLOSE_PAREN
-	SEMI_COLON
-	BACKTICK
-	PLUS
-	COLON
-	OPEN_CURLY
-	CLOSE_CURLY
-	COMMA
-	EQUAL
-
-	FETCH
-	DATA
-	GLOBAL
-	ENDFETCH
-
-	EOF
-	NEW_LINE
+	ILLEGAL          =  "ILLEGAL"
+	EOF              =  "EOF"
+	IDENTIFIER       =  "IDENTIFIER"
+	NUMBER           =  "NUMBER"
+	ASSIGN           =  "="
+	PLUS             =  "+"
+	MINUS            =  "-"
+	BANG             =  "!"
+	ASTERISK         =  "*"
+	SLASH            =  "/"
+	LT               =  "<"
+	GT               =  ">"
+	EQ               =  "=="
+	NOT_EQ           =  "!="
+	COMMA            =  ","
+	SEMICOLON        =  ";"
+	COLON            =  ":"
+	LPAREN           =  "("
+	RPAREN           =  ")"
+	LBRACE           =  "{"
+	RBRACE           =  "}"
+	LBRACKET         =  "["
+	RBRACKET         =  "]"
+	TRANSPILEASSIGN  =  "->"
+	COMMENT          =  "//"
+	FETCH            =  "FETCH"
+	ENDFETCH         =  "ENDFETCH"
+	LET              =  "LET"
+	TRUE             =  "TRUE"
+	FALSE            =  "FALSE"
+	IF               =  "IF"
+	ELSE             =  "ELSE"
+	STRING           =  "STRING"
 )
 
-var Reserved_Keyword = map[string]TokenKind{
-	"global": GLOBAL,
-	"fetch":  FETCH,
-	"endfet": ENDFETCH,
-	"let": LET,
+type Token struct {
+	Value  string
+	Kind   TokenKind
 }
 
-func TokenKindStringify(k TokenKind) string {
-	switch k {
-	case OPEN_PAREN:
-		return "open_paren"
-	case CLOSE_PAREN:
-		return "close_paren"
-	case NUMBER:
-		return "number"
-	case EQUAL:
-		return "equal"
-	case LET:
-		return "let"
-	case TRANSPILE_ASSIGN:
-		return "transpile_assign"
-	case STRING:
-		return "string"
-	case SEMI_COLON:
-		return "semi_colon"
-	case COLON:
-		return "colon"
-	case OPEN_CURLY:
-		return "open_curly"
-	case CLOSE_CURLY:
-		return "close_curly"
-	case FETCH:
-		return "fetch"
-	case DATA:
-		return "data"
-	case GLOBAL:
-		return "global"
-	case IDENTIFIER:
-		return "identifier"
-	case EOF:
-		return "eof"
-	case COMMA:
-		return "comma"
-	case ENDFETCH:
-		return "endfetch"
-	case BACKTICK:
-		return "backtick"
-	default:
-		log.Fatalf("Cannot stringfy token: %d no case match", k)
-		return ""
+var keywords = map[string]TokenKind{
+	"fetch":     FETCH,
+	"endfet":    ENDFETCH,
+	"let":       LET,
+	"true":      TRUE,
+	"false":     FALSE,
+	"if":        IF,
+	"else":      ELSE,
+}
+
+func LookupIdent(ident string) TokenKind {
+	if tok, ok := keywords[ident]; ok {
+		return tok
 	}
+	return IDENTIFIER
 }
-

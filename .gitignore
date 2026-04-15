@@ -2,3 +2,5 @@
 .vim/
 .curgo/
 tests/
+curgo
+server.js

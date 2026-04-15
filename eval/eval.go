@@ -29,7 +29,7 @@ func Eval(node ast.Node, env *object.Env) object.Object {
 			return args[0]
 		}
 
-		return applyFunction(function, args, env)
+		return applyFunction(function, args)
 
 	case *ast.LetStatement:
 		v := Eval(node.Value, env)
@@ -108,7 +108,7 @@ func evalIntegerInfixExpression(
 	}
 }
 
-func applyFunction(fn object.Object, args []object.Object, env *object.Env) object.Object {
+func applyFunction(fn object.Object, args []object.Object) object.Object {
 	cr := New()
 	switch fn := fn.(type) {
 		case *object.FetchFunction:

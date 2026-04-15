@@ -1,12 +1,11 @@
 package object
 
 import (
-	"curgo/lexer"
 	"curgo/types/ast"
+	"curgo/types/tokens"
 	"fmt"
 	"net/http"
 	"strconv"
-
 )
 
 
@@ -28,7 +27,7 @@ type Object interface {
 }
 
 type FetchFunction struct {
-	Token   *lexer.Token
+	Token   *token.Token
 	Params  []*ast.Identifier
 	Body    []ast.Statement
 	Env     *Env

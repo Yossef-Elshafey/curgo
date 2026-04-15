@@ -6,6 +6,7 @@ import (
 	"curgo/parser"
 	"curgo/types/object"
 	"curgo/utils"
+	"fmt"
 	"log"
 	"os"
 )
@@ -27,10 +28,12 @@ func interp(filename string) {
 
 	source := string(f)
 	utils.SetSource(source)
-	tokens := lexer.Tokenize(source)
-	p := parser.Parse(tokens)
+	tokens := lexer.New(source)
+	p := parser.New(tokens)
+	program := p.ParseProgram()
 	env := object.NewEnvironment()
-	eval.Eval(p,env)
+	e := eval.Eval(program, env)
+	if e != nil {fmt.Printf("%s\n", e.Visit())}
 }
 
 func run() {

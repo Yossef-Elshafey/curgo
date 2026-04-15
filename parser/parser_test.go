@@ -17,11 +17,12 @@ func TestProgram(t *testing.T) {
 	let foo = "bar";
 	user(foo, "x");
 	`
-	tokens := lexer.Tokenize(source)
-	p := Parse(tokens)
-	testNumberOfStatments(t, len(p.Statements), 3)
-	fs, ok := p.Statements[0].(*ast.FetchStmt)
-	if !ok {t.Errorf("program.Statements[0] is not FetchStmt, got= %T", p.Statements[0])}
+	tokens := lexer.New(source)
+	p := New(tokens)
+	program := p.ParseProgram()
+	testNumberOfStatments(t, len(program.Statements), 3)
+	fs, ok := program.Statements[0].(*ast.FetchStmt)
+	if !ok {t.Errorf("program.Statements[0] is not FetchStmt, got= %T", program.Statements[0])}
 	b1 := fs.Body[0].(*ast.CurgoAssignStatment)
 	testInfix(t, b1.Value, "localhost:8888/", "+", "id")
 	b4 := fs.Body[3].(*ast.CurgoAssignStatment)
@@ -30,28 +31,29 @@ func TestProgram(t *testing.T) {
 
 func TestFetchStatement(t *testing.T) {
 	source := `
-	fetch user(id, payload): 
-	  host    ->  "localhost:8888" + "/foo" + "/bar";
-	  header  ->  "Content-Type:application/json";
-	  method  ->  "POST"; 
-	  data    ->`  + "`{'fname': 'lname'}`;" + "endfet"
+	fetch user(id, payload):
+	  host          ->  url;
+	  header        ->  "Content-Type:application/json";
+	  header        ->  "Accpet:json";
+	  method        ->  "POST";
+	  data          ->  ` + "`" + `{"fname":"yossef", "lname":"elshafey"}` + "`;" + "endfet"
 
-	tokens := lexer.Tokenize(source)
-	p := Parse(tokens)
+	tokens := lexer.New(source)
+	p := New(tokens).ParseProgram()
 	testNumberOfStatments(t, len(p.Statements), 1)
 	fs, ok := p.Statements[0].(*ast.FetchStmt)
 	if !ok {
 		t.Errorf("Program.Statements[0] is not FetchStmt, got= %T", p.Statements[0])
 	}
 	if len( fs.Arguments ) != 2 {
-		t.Errorf("Expect FetchStmt Arguments to be 0, got= %d", len(fs.Arguments))
+		t.Errorf("Expect FetchStmt Arguments to be 2, got= %d", len(fs.Arguments))
 	}
 }
 
 func TestLetStatment(t *testing.T) {
 	source := `let i = 2 + 3;`
-	tokens := lexer.Tokenize(source)
-	p := Parse(tokens)
+	tokens := lexer.New(source)
+	p := New(tokens).ParseProgram()
 	testNumberOfStatments(t, len(p.Statements), 1)
 	ls, ok := p.Statements[0].(*ast.LetStatement)
 	if !ok {
@@ -63,8 +65,8 @@ func TestLetStatment(t *testing.T) {
 
 func TestCallExpression(t *testing.T) {
 	source := `add(1,2 + 3, "foo" + "bar", "foo");`
-	l := lexer.Tokenize(source)
-	p := Parse(l)
+	l := lexer.New(source)
+	p := New(l).ParseProgram()
 	testNumberOfStatments(t, len(p.Statements), 1)
 	es, ok := p.Statements[0].(*ast.ExpressionStatement)
 	if !ok {

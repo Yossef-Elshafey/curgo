@@ -4,17 +4,16 @@ import (
 	"curgo/lexer"
 	"curgo/types/ast"
 	"curgo/types/tokens"
-	"curgo/utils"
-	"fmt"
 	"log"
 	"strconv"
 )
 
 type Parser struct {
-	currentToken  lexer.Token
-	tokens        []lexer.Token
-	peekToken     lexer.Token
-	position      int
+	tokens        *lexer.Lexer
+	currentToken  token.Token
+	peekToken     token.Token
+	prefixLookup  map[token.TokenKind]prefixParseFn
+	infixLookup   map[token.TokenKind]infixParseFn
 }
 
 type (
@@ -38,50 +37,56 @@ var bindingPowerLookup = map[string]bindingPower{
 	"(": CALL,
 }
 
-var prefixLookup = map[tokens.TokenKind]prefixParseFn{}
-var infixLookup = map[tokens.TokenKind]infixParseFn{}
+func New(l *lexer.Lexer) *Parser {
+	p := &Parser{
+		tokens:      l,
+	}
+	p.initInfix()
+	p.initPrefix()
+	p.advanceTokens()
+	p.advanceTokens()
+	return p
+}
 
-
-func Parse(t []lexer.Token) *ast.Program {
-	p := &Parser{}
-	p.tokens = t
-	p.initParser()
+func (p *Parser) ParseProgram() *ast.Program {
 	program := &ast.Program{}
-	for !p.peekTokenIs(tokens.EOF) {
+	program.Statements = []ast.Statement{}
+
+	for !p.curTokenIs(token.EOF) {
 		stmt := p.parseStmt()
 		if stmt != nil {
 			program.Statements = append(program.Statements, stmt)
 		}
 		p.advanceTokens()
 	}
+
 	return program
 }
 
-func (p *Parser) initParser() {
-	p.alignTokens()
-	p.initPrefix()
-	p.initInfix()
-}
-
 func (p *Parser) initPrefix() {
-	p.registerPrefix(tokens.IDENTIFIER,  p.parseIdentifier)
-	p.registerPrefix(tokens.STRING,      p.parseStringLiteral)
-	p.registerPrefix(tokens.BACKTICK,    p.parseStringLiteral)
-	p.registerPrefix(tokens.NUMBER,      p.parseNumberLiteral)
-	p.registerPrefix(tokens.OPEN_PAREN,  p.parseGroupedExpression)
+	if p.prefixLookup == nil {
+		p.prefixLookup = make(map[token.TokenKind]prefixParseFn)
+	}
+	p.registerPrefix(token.IDENTIFIER,  p.parseIdentifier)
+	p.registerPrefix(token.STRING,      p.parseStringLiteral)
+	p.registerPrefix(token.NUMBER,      p.parseNumberLiteral)
+	p.registerPrefix(token.LPAREN,      p.parseGroupedExpression)
 }
 
 func (p *Parser) initInfix() {
-	p.registerInfix(tokens.PLUS, p.parseBinaryExpression)
-	p.registerInfix(tokens.OPEN_PAREN, p.parseCallExpression)
+	if p.infixLookup == nil {
+		p.infixLookup = make(map[token.TokenKind]infixParseFn)
+	}
+	p.registerInfix(token.PLUS, p.parseBinaryExpression)
+	p.registerInfix(token.LPAREN, p.parseCallExpression)
 }
 
-func (p *Parser) registerPrefix(k tokens.TokenKind, handler prefixParseFn) {
-	prefixLookup[k] = handler
+func (p *Parser) registerPrefix(k token.TokenKind, handler prefixParseFn) {
+	p.prefixLookup[k] = handler
 }
 
-func (p *Parser) registerInfix(k tokens.TokenKind, handler infixParseFn) {
-	infixLookup[k] = handler
+func (p *Parser) registerInfix(k token.TokenKind, handler infixParseFn) {
+	p.infixLookup[k] = handler
 }
 
 func (p *Parser) peekTokenBindingPower() bindingPower {
@@ -92,50 +97,24 @@ func (p *Parser) currentTokenBindingPower() bindingPower {
 	return bindingPowerLookup[p.currentToken.Value]
 }
 
-// NOTE: peekTokenIs, expectPeekToBe the way peek check handled is foolish
-// implement peek token check such that errors, token advancing is clear
-// Seperate the error messages in different function
-func (p *Parser) peekTokenIs(k tokens.TokenKind) bool {
+func (p *Parser) peekTokenIs(k token.TokenKind) bool {
 	if p.peekToken.Kind != k {
 		return false
 	}
 	return true
 }
 
+func (p *Parser) curTokenIs(t token.TokenKind) bool {
+	return p.currentToken.Kind == t
+}
+
 func (p *Parser) advanceTokens() {
 	p.currentToken = p.peekToken
-	p.peekToken = p.tokens[p.position]
-	if p.position+1 != len(p.tokens) {
-		p.position++
-	}
+	p.peekToken = p.tokens.NextToken()
 }
 
-func (p *Parser) alignTokens() {
-	p.advanceTokens()
-	p.advanceTokens()
-}
-
-func (p *Parser) isEndOfFetch() {
-	if p.peekTokenIs(tokens.EOF) && p.currentToken.Kind == tokens.SEMI_COLON {
-		fmt.Printf("hint: use 'endfet' keyword to close fetch statement\n")
-	}
-}
-
-func (p *Parser) expectPeekToBe(k tokens.TokenKind) bool {
-	if p.peekToken.Kind != k {
-		line := p.peekToken.Pos.Line
-		lineIssue := utils.ReadSourceAsLines(line)
-		p.isEndOfFetch()
-		fmt.Printf("Parser:%d:%d: encouter error at line:\n %s\n", line-1,
-			p.currentToken.Pos.End,
-			lineIssue)
-
-		log.Fatalf("Expect to find %s after '%s', got=%s", tokens.TokenKindStringify(k),
-			p.currentToken.Value,
-			tokens.TokenKindStringify(p.peekToken.Kind))
-
-		return false
-	}
+func (p *Parser) expectPeekToBe(k token.TokenKind) bool {
+	if !p.peekTokenIs(k) { return false }
 	p.advanceTokens()
 	return true
 }
@@ -161,9 +140,9 @@ func (p *Parser) parseBinaryExpression(lhs ast.Expression) ast.Expression {
 
 func (p *Parser) parseStmt() ast.Statement {
 	switch p.currentToken.Kind {
-	case tokens.FETCH:
+	case token.FETCH:
 		return p.parseFetchStatment()
-	case tokens.LET:
+	case token.LET:
 		return p.parseLetStmt()
 	default:
 		return p.parseExpressionStatement()
@@ -171,13 +150,13 @@ func (p *Parser) parseStmt() ast.Statement {
 }
 
 func (p *Parser) parseLetStmt() *ast.LetStatement {
-	if !p.expectPeekToBe(tokens.IDENTIFIER) {return nil}
+	if !p.expectPeekToBe(token.IDENTIFIER) {return nil}
 	ls := &ast.LetStatement{}
 	ls.Identifier = &ast.Identifier{Token: p.currentToken, Value: p.currentToken.Value}
-	if !p.expectPeekToBe(tokens.EQUAL) { }
+	if !p.expectPeekToBe(token.ASSIGN) { return nil }
 	p.advanceTokens()
 	ls.Value = p.parseExpression(LOWEST)
-	if !p.expectPeekToBe(tokens.SEMI_COLON) {return nil}
+	if !p.expectPeekToBe(token.SEMICOLON) {return nil}
 	return ls
 }
 
@@ -186,7 +165,7 @@ func (p *Parser) parseFetchStatment() *ast.FetchStmt {
 	fs.Body = []ast.Statement{}
 	fs.Arguments = []*ast.Identifier{}
 
-	if !p.expectPeekToBe(tokens.IDENTIFIER) {
+	if !p.expectPeekToBe(token.IDENTIFIER) {
 		return nil
 	}
 
@@ -198,9 +177,11 @@ func (p *Parser) parseFetchStatment() *ast.FetchStmt {
 	p.advanceTokens()
 	fs.Arguments = p.parseFetchArguments()
 
-	if !p.expectPeekToBe(tokens.COLON) { return nil }
+	// if !p.curTokenIs(token.RPAREN) { return nil }
+	if !p.expectPeekToBe(token.COLON) {return nil}
 
-	for !p.peekTokenIs(tokens.ENDFETCH) {
+	// TODO: if there is no token(endfet) its an infinite loop
+	for !p.peekTokenIs(token.ENDFETCH) {
 		fs.Body = append(fs.Body, p.parseFetchBody())
 	}
 
@@ -210,7 +191,7 @@ func (p *Parser) parseFetchStatment() *ast.FetchStmt {
 
 func (p *Parser) parseFetchArguments() []*ast.Identifier {
 	args := []*ast.Identifier{}
-	if p.peekTokenIs(tokens.CLOSE_PAREN) {
+	if p.peekTokenIs(token.RPAREN) {
 		p.advanceTokens()
 		return args
 	}
@@ -218,36 +199,36 @@ func (p *Parser) parseFetchArguments() []*ast.Identifier {
 	arg := &ast.Identifier{Token: p.currentToken, Value: p.currentToken.Value}
 
 	args = append(args, arg)
-	for p.peekTokenIs(tokens.COMMA) {
+	for p.peekTokenIs(token.COMMA) {
 		p.advanceTokens()
 		p.advanceTokens()
 		arg = &ast.Identifier{Token: p.currentToken, Value: p.currentToken.Value}
 		args = append(args, arg)
 	}
-	if !p.expectPeekToBe(tokens.CLOSE_PAREN) { return nil }
+	if !p.expectPeekToBe(token.RPAREN) { return nil }
 	return args
 }
 
 func (p *Parser) parseFetchBody() ast.Statement {
-	if !p.expectPeekToBe(tokens.IDENTIFIER) {
+	if !p.expectPeekToBe(token.IDENTIFIER) {
 		return nil
 	}
 	ca := &ast.CurgoAssignStatment{}
 	ca.Arg = &ast.Identifier{Token: p.currentToken, Value: p.currentToken.Value}
-	if !p.expectPeekToBe(tokens.TRANSPILE_ASSIGN) {
+	if !p.expectPeekToBe(token.TRANSPILEASSIGN) {
 		return nil
 	}
 	p.advanceTokens()
 	ca.Value = p.parseExpression(LOWEST)
 
-	if !p.expectPeekToBe(tokens.SEMI_COLON) {
+	if !p.expectPeekToBe(token.SEMICOLON) {
 		return nil
 	}
 	return ca
 }
 
 func (p *Parser) parseExpression(bp bindingPower) ast.Expression {
-	prefix := prefixLookup[p.currentToken.Kind]
+	prefix := p.prefixLookup[p.currentToken.Kind]
 	if prefix == nil {
 		// p.noPrefixFoundErr(p.currentToken) TODO:
 		log.Fatalf("Prefix not founded: %s\n", p.currentToken.Value)
@@ -255,8 +236,8 @@ func (p *Parser) parseExpression(bp bindingPower) ast.Expression {
 	}
 	left := prefix()
 
-	for !p.peekTokenIs(tokens.SEMI_COLON) && bp < p.peekTokenBindingPower() {
-		infix := infixLookup[p.peekToken.Kind]
+	for !p.peekTokenIs(token.SEMICOLON) && bp < p.peekTokenBindingPower() {
+		infix := p.infixLookup[p.peekToken.Kind]
 		if infix == nil {
 			return left
 		}
@@ -285,31 +266,31 @@ func (p *Parser) parseCallExpression(fs ast.Expression) ast.Expression {
 
 func (p *Parser) parseCallArgument() []ast.Expression {
 	args := []ast.Expression{}
-	if p.peekTokenIs(tokens.CLOSE_PAREN) {
+	if p.peekTokenIs(token.RPAREN) {
 		p.advanceTokens()
 		return args
 	}
 	p.advanceTokens()
 	args = append(args, p.parseExpression(LOWEST))
-	for p.peekTokenIs(tokens.COMMA) {
+	for p.peekTokenIs(token.COMMA) {
 		p.advanceTokens()
 		p.advanceTokens()
 		args = append(args, p.parseExpression(LOWEST))
 	}
-	if !p.expectPeekToBe(tokens.CLOSE_PAREN) { return nil }
+	if !p.expectPeekToBe(token.RPAREN) { return nil }
 	return args
 }
 
 func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
 	es := &ast.ExpressionStatement{}
 	es.Expression = p.parseExpression(LOWEST)
-	if p.peekTokenIs(tokens.SEMI_COLON) { p.advanceTokens() }
+	if p.peekTokenIs(token.SEMICOLON) { p.advanceTokens() }
 	return es
 }
 
 func (p *Parser) parseGroupedExpression() ast.Expression {
 	p.advanceTokens()
 	exp := p.parseExpression(LOWEST)
-	if !p.expectPeekToBe(tokens.CLOSE_PAREN) { return nil }
+	if !p.expectPeekToBe(token.RPAREN) { return nil }
 	return exp
 }

@@ -2,7 +2,7 @@ package ast
 
 import (
 	"bytes"
-	"curgo/lexer"
+	"curgo/types/tokens"
 	"fmt"
 )
 
@@ -29,7 +29,7 @@ func (p *Program) Stringify() string {
 }
 
 type Identifier struct {
-	Token lexer.Token
+	Token token.Token
 	Value  string
 }
 
@@ -41,7 +41,7 @@ func (i *Identifier) Stringify() string {
 }
 
 type FetchStmt struct {
-	Token lexer.Token
+	Token token.Token
 	FetchIdentifier  *Identifier
 	Arguments []*Identifier
 	Body  []Statement
@@ -58,7 +58,7 @@ func (fs *FetchStmt) Stringify() string {
 }
 
 type StringLiteral struct {
-	Token lexer.Token
+	Token token.Token
 	Value string
 }
 
@@ -86,7 +86,7 @@ func (ca *CurgoAssignStatment) Stringify() string {
 
 type BinaryExpression struct {
 	Left Expression
-	Operator lexer.Token
+	Operator token.Token
 	Right Expression
 }
 
@@ -115,7 +115,7 @@ func (ls *LetStatement) Stringify() string {
 }
 
 type ExpressionStatement struct {
-	Token lexer.Token
+	Token token.Token
 	Expression Expression
 }
 
@@ -127,7 +127,7 @@ func (es *ExpressionStatement) Stringify() string {
 }
 
 type CallExpression struct {
-	Token lexer.Token
+	Token token.Token
 	Function Expression
 	Arguments []Expression
 }
@@ -145,7 +145,7 @@ func (ce *CallExpression) Stringify() string {
 }
 
 type NumberLiteral struct {
-	Token lexer.Token
+	Token token.Token
 	Value int64
 }
 
