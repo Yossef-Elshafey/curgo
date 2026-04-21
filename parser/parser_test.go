@@ -3,8 +3,33 @@ package parser
 import (
 	"curgo/lexer"
 	"curgo/types/ast"
+	"fmt"
 	"testing"
 )
+
+func TestIncorrectFetchStatement(t *testing.T) {
+	source := []struct{
+		input string
+	}{
+		{input: "fetch"},
+		{input: `fetch )`},
+		{input: `fetch user() `},
+		{input: `fetch user(): `},
+		{input: `fetch user(): header -> "Content-Type:application/json"endfet`},
+	}
+
+	for _, s := range source {
+		tokens := lexer.New(s.input)
+		p := New(tokens)
+		program, err := p.ParseProgram()
+
+		if err != nil {
+			fmt.Printf("%+v\n", err)
+		}else {
+			t.Errorf("Program should fail with syntax error but it didnt, got= %+v\n", program.Statements)
+		}
+	}
+}
 
 func TestProgram(t *testing.T) {
 	source := `
@@ -19,7 +44,7 @@ func TestProgram(t *testing.T) {
 	`
 	tokens := lexer.New(source)
 	p := New(tokens)
-	program := p.ParseProgram()
+	program, _ := p.ParseProgram()
 	testNumberOfStatments(t, len(program.Statements), 3)
 	fs, ok := program.Statements[0].(*ast.FetchStmt)
 	if !ok {t.Errorf("program.Statements[0] is not FetchStmt, got= %T", program.Statements[0])}
@@ -39,11 +64,12 @@ func TestFetchStatement(t *testing.T) {
 	  data          ->  ` + "`" + `{"fname":"yossef", "lname":"elshafey"}` + "`;" + "endfet"
 
 	tokens := lexer.New(source)
-	p := New(tokens).ParseProgram()
-	testNumberOfStatments(t, len(p.Statements), 1)
-	fs, ok := p.Statements[0].(*ast.FetchStmt)
+	p := New(tokens)
+	program, _ := p.ParseProgram()
+	testNumberOfStatments(t, len(program.Statements), 1)
+	fs, ok := program.Statements[0].(*ast.FetchStmt)
 	if !ok {
-		t.Errorf("Program.Statements[0] is not FetchStmt, got= %T", p.Statements[0])
+		t.Errorf("Program.Statements[0] is not FetchStmt, got= %T", program.Statements[0])
 	}
 	if len( fs.Arguments ) != 2 {
 		t.Errorf("Expect FetchStmt Arguments to be 2, got= %d", len(fs.Arguments))
@@ -53,11 +79,12 @@ func TestFetchStatement(t *testing.T) {
 func TestLetStatment(t *testing.T) {
 	source := `let i = 2 + 3;`
 	tokens := lexer.New(source)
-	p := New(tokens).ParseProgram()
-	testNumberOfStatments(t, len(p.Statements), 1)
-	ls, ok := p.Statements[0].(*ast.LetStatement)
+	p := New(tokens)
+	program, _ := p.ParseProgram()
+	testNumberOfStatments(t, len(program.Statements), 1)
+	ls, ok := program.Statements[0].(*ast.LetStatement)
 	if !ok {
-		t.Errorf("program.Statements[0] is not LetStatement, got= %T", p.Statements[0])
+		t.Errorf("program.Statements[0] is not LetStatement, got= %T", program.Statements[0])
 	}
 	testIdentifier(t, ls.Identifier, "i")
 	testInfix(t, ls.Value, 2, "+", 3)
@@ -66,11 +93,12 @@ func TestLetStatment(t *testing.T) {
 func TestCallExpression(t *testing.T) {
 	source := `add(1,2 + 3, "foo" + "bar", "foo");`
 	l := lexer.New(source)
-	p := New(l).ParseProgram()
-	testNumberOfStatments(t, len(p.Statements), 1)
-	es, ok := p.Statements[0].(*ast.ExpressionStatement)
+	p := New(l)
+	program, _ := p.ParseProgram()
+	testNumberOfStatments(t, len(program.Statements), 1)
+	es, ok := program.Statements[0].(*ast.ExpressionStatement)
 	if !ok {
-		t.Errorf("Expect program.Statements[0] to be ExpressionStatement, got=%T", p.Statements[0])
+		t.Errorf("Expect program.Statements[0] to be ExpressionStatement, got=%T", program.Statements[0])
 	}
 	ce := es.Expression.(*ast.CallExpression)
 	if len(ce.Arguments) != 4 {
@@ -98,8 +126,8 @@ func testInfix(
 		return false
 	}
 
-	if bExp.Operator.Value != operator {
-		t.Errorf("BinaryExpression.operator doesnt match expect=%s, got=%s", operator, bExp.Operator.Value)
+	if bExp.Operator != operator {
+		t.Errorf("BinaryExpression.operator doesnt match expect=%s, got=%s", operator, bExp.Operator)
 		return false
 	}
 

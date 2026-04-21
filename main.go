@@ -5,7 +5,6 @@ import (
 	"curgo/lexer"
 	"curgo/parser"
 	"curgo/types/object"
-	"curgo/utils"
 	"fmt"
 	"log"
 	"os"
@@ -23,14 +22,16 @@ func main() {
 func interp(filename string) {
 	f, err := os.ReadFile(filename)
 	if err != nil {
-		log.Fatalf("cant read file:%s", filename)
+		log.Fatalf("cannot read file %s: %s\n", filename, err)
+	}
+	tokens := lexer.New(string(f))
+	p := parser.New(tokens)
+	program, err := p.ParseProgram()
+
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	source := string(f)
-	utils.SetSource(source)
-	tokens := lexer.New(source)
-	p := parser.New(tokens)
-	program := p.ParseProgram()
 	env := object.NewEnvironment()
 	e := eval.Eval(program, env)
 	if e != nil {fmt.Printf("%s\n", e.Visit())}

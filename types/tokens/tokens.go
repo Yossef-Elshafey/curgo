@@ -41,6 +41,7 @@ const (
 type Token struct {
 	Value  string
 	Kind   TokenKind
+	Line   int
 }
 
 var keywords = map[string]TokenKind{

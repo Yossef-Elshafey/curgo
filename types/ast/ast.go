@@ -71,6 +71,7 @@ func (sl *StringLiteral) Stringify() string {
 func (sl *StringLiteral) iExpr() {}
 
 type CurgoAssignStatment struct {
+	Token token.Token
 	Arg   *Identifier
 	Value Expression
 }
@@ -85,8 +86,9 @@ func (ca *CurgoAssignStatment) Stringify() string {
 }
 
 type BinaryExpression struct {
+	Token token.Token
 	Left Expression
-	Operator token.Token
+	Operator string
 	Right Expression
 }
 
@@ -94,7 +96,7 @@ func (br *BinaryExpression) iExpr() {}
 func (br *BinaryExpression) Stringify() string {
 	var out bytes.Buffer
 	out.WriteString(br.Left.Stringify())
-	out.WriteString(br.Operator.Value)
+	out.WriteString(br.Operator)
 	out.WriteString(br.Right.Stringify())
 	return out.String()
 }
