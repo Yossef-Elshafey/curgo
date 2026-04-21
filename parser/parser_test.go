@@ -3,7 +3,6 @@ package parser
 import (
 	"curgo/lexer"
 	"curgo/types/ast"
-	"fmt"
 	"testing"
 )
 
@@ -15,7 +14,8 @@ func TestIncorrectFetchStatement(t *testing.T) {
 		{input: `fetch )`},
 		{input: `fetch user() `},
 		{input: `fetch user(): `},
-		{input: `fetch user(): header -> "Content-Type:application/json"endfet`},
+		{input: `fetch user():
+			header -> "Content-Type:application/json"endfet`},
 	}
 
 	for _, s := range source {
@@ -23,9 +23,7 @@ func TestIncorrectFetchStatement(t *testing.T) {
 		p := New(tokens)
 		program, err := p.ParseProgram()
 
-		if err != nil {
-			fmt.Printf("%+v\n", err)
-		}else {
+		if err == nil {
 			t.Errorf("Program should fail with syntax error but it didnt, got= %+v\n", program.Statements)
 		}
 	}

@@ -119,6 +119,11 @@ func (p *Parser) syntaxError(msg string) error {
 	return fmt.Errorf("Line %d\n %s\n", p.currentToken.Line, msg)
 }
 
+func (p *Parser) debugToken() {
+	fmt.Printf("Current: %+v\n", p.currentToken)
+	fmt.Printf("peek: %+v\n", p.peekToken)
+}
+
 func (p *Parser) expectPeekToBe(k token.TokenKind) bool {
 	if !p.peekTokenIs(k) { return false }
 	p.advanceTokens()
@@ -219,11 +224,6 @@ func (p *Parser) parseFetchStatment() (*ast.FetchStmt, error) {
 	return fs, nil
 }
 
-func (p *Parser) debugToken() {
-	fmt.Printf("Current: %+v\n", p.currentToken)
-	fmt.Printf("peek: %+v\n", p.peekToken)
-}
-
 func (p *Parser) parseFetchArguments() ( []*ast.Identifier, error ) {
 	args := []*ast.Identifier{}
 	if p.peekTokenIs(token.RPAREN) {
@@ -250,14 +250,18 @@ func (p *Parser) parseFetchArguments() ( []*ast.Identifier, error ) {
 
 func (p *Parser) parseFetchBody() ( ast.Statement, error ) {
 	if !p.expectPeekToBe(token.IDENTIFIER) {
+		fmt.Printf("%s\n", "use 'endfet' keyword to close fetch stmt")
 		return nil, p.syntaxError("expect fetch stmt body to be include an argument of network call")
 	}
 	ca := &ast.CurgoAssignStatment{}
 	ca.Token = p.currentToken
 	ca.Arg = &ast.Identifier{Token: p.currentToken, Value: p.currentToken.Value}
+
 	if !p.expectPeekToBe(token.TRANSPILEASSIGN) {
+		fmt.Printf("%s\n", "use 'endfet' keyword to close fetch stmt")
 		return nil, p.syntaxError("expect '->' after fetch stmt body identifier")
 	}
+
 	p.advanceTokens()
 	expr, err := p.parseExpression(LOWEST)
 	if err != nil {

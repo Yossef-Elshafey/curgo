@@ -116,6 +116,9 @@ func (l *Lexer) NextToken() token.Token {
 
 func (l *Lexer) skipWhitespace() {
 	for l.ch == ' ' || l.ch == '\t' || l.ch == '\n' || l.ch == '\r' {
+		if l.ch == '\n' {
+			l.line += 1
+		}
 		l.readChar()
 	}
 }
@@ -125,9 +128,6 @@ func (l *Lexer) readChar() {
 		l.ch = 0
 	} else {
 		l.ch = l.input[l.readPosition]
-	}
-	if l.ch == '\n' {
-		l.line += 1
 	}
 	l.position = l.readPosition
 	l.readPosition += 1
@@ -158,7 +158,7 @@ func isDigit(ch byte) bool {
 }
 
 func newToken(tokenKind token.TokenKind, ch byte, line int) token.Token {
-	return token.Token{Kind: tokenKind, Value: string(ch), Line:line }
+	return token.Token{Kind: tokenKind, Value: string(ch), Line: line }
 }
 
 func (l *Lexer) peekChar() byte {
