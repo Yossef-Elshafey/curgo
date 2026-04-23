@@ -54,7 +54,7 @@ func Eval(node ast.Node, env *object.Env) object.Object {
 		if isError(left) {
 			return left
 		}
-		member := node.Member.Stringify()
+		member := node.Member.Value
 		return evalDotInfixExpression(left, member)
 	case *ast.ExpressionStatement: return Eval(node.Expression, env)
 	case *ast.Identifier: return evalIdentifier(node, env)
@@ -95,7 +95,7 @@ func evalDotInfixExpression(left object.Object, member string) object.Object {
 				return left
 		}
 	}
-	return nil
+	return newError("%s doesnt support current option '%s'\n", left.Type(), member)
 }
 
 func evalStringInfixExpression(
