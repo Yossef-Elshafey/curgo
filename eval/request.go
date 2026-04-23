@@ -59,11 +59,12 @@ func (cr *CurgoRequest) Get(k string) ParamType {
 
 func (cr *CurgoRequest) buildRequest(k,v string) error {
 	if cr.req == nil {
-		cr.req, _ = http.NewRequest("GET", "http://placeholder", nil)
+		cr.req, _ = http.NewRequest("GET", "", nil)
 	}
 	switch cr.Get(k) {
 		case HEADER: 
 			header := strings.SplitN(v, ":", 2)
+			// TODO: header is not splitable at : error
 			cr.req.Header.Add(header[0], header[1])
 		case HOST:
 			url, err := url.Parse(v)

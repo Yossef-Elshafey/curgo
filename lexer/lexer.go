@@ -84,17 +84,17 @@ func (l *Lexer) NextToken() token.Token {
 	case '.':
 		tok = newToken(token.DOT, l.ch, l.line)
 	case 0:
+		tok.Line = l.line
 		tok.Value = ""
 		tok.Kind = token.EOF
-		tok.Line = l.line
 	case '"':
+		tok.Line = l.line
 		tok.Kind = token.STRING
 		tok.Value = l.readString('"')
-		tok.Line = l.line
 	case '`':
+		tok.Line = l.line
 		tok.Kind = token.STRING
 		tok.Value = l.readString('`')
-		tok.Line = l.line
 	case '[':
 		tok = newToken(token.LBRACKET, l.ch, l.line)
 	case ']':
@@ -103,14 +103,14 @@ func (l *Lexer) NextToken() token.Token {
 		tok = newToken(token.COLON, l.ch, l.line)
 	default:
 		if isLetter(l.ch) {
+			tok.Line = l.line
 			tok.Value = l.readIdentifier()
 			tok.Kind = token.LookupIdent(tok.Value)
-			tok.Line = l.line
 			return tok
 		} else if isDigit(l.ch) {
+			tok.Line = l.line
 			tok.Kind = token.NUMBER
 			tok.Value = l.readNumber()
-			tok.Line = l.line
 			return tok
 		} else {
 			tok = newToken(token.ILLEGAL, l.ch, l.line)

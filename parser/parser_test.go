@@ -17,7 +17,7 @@ func TestMemberAccess(t *testing.T) {
 	// testInfix(t, program.Statements[0], "a", "." , "b")
 	expr, ok := program.Statements[0].(*ast.ExpressionStatement)
 	if !ok {
-		t.Errorf("expect program.Statements[0] to exprStatement, got= %t", program.Statements[0])
+		t.Errorf("expect program.Statements[0] to exprStatement, got= %T", program.Statements[0])
 	}
 	rightExpr := expr.Expression.(*ast.MemberAccess).Member
 	testIdentifier(t, rightExpr,"c")

@@ -29,7 +29,11 @@ func Eval(node ast.Node, env *object.Env) object.Object {
 			return args[0]
 		}
 
-		return applyFunction(function, args)
+		e := applyFunction(function, args)
+		if isError(e) {
+			return newError("Evaluator(%d): %s", node.Token.Line, e.Visit())
+		}
+		return e
 
 	case *ast.LetStatement:
 		v := Eval(node.Value, env)
@@ -47,7 +51,11 @@ func Eval(node ast.Node, env *object.Env) object.Object {
 		if isError(right) {
 			return right
 		}
-		return evalInfixExpression(node.Operator, left, right)
+		e := evalInfixExpression(node.Operator, left, right)
+		if isError(e) {
+			return newError("Evaluator(%d): %s", node.Token.Line, e.Visit())
+		}
+		return e
 
 	case *ast.MemberAccess:
 		left := Eval(node.Left, env)
@@ -55,9 +63,18 @@ func Eval(node ast.Node, env *object.Env) object.Object {
 			return left
 		}
 		member := node.Member.Value
-		return evalDotInfixExpression(left, member)
+		e := evalMemberAccessExpr(left, member)
+		if isError(e) {
+			return newError("Evaluator(%d): %s", node.Member.Token.Line, e.Visit())
+		}
+		return e
 	case *ast.ExpressionStatement: return Eval(node.Expression, env)
-	case *ast.Identifier: return evalIdentifier(node, env)
+	case *ast.Identifier: 
+		e := evalIdentifier(node, env)
+		if isError(e) {
+			return newError("Evaluater(%d): %s", node.Token.Line, e.Visit())
+		}
+		return e
 	case *ast.StringLiteral: return &object.String{Value: node.Value}
 	case *ast.NumberLiteral: return &object.Integer{Value: node.Value}
 	case *ast.CurgoAssignStatment: return &object.CurgoCall{Key: node.Arg.Value, Value: Eval(node.Value, env)}
@@ -81,12 +98,12 @@ func evalInfixExpression(
 	}
 }
 
-func evalDotInfixExpression(left object.Object, member string) object.Object {
+func evalMemberAccessExpr(left object.Object, member string) object.Object {
 	switch left := left.(type) {
 	case *object.String:
 		switch member {
 		case "length":
-			return &object.Integer{Value: int64(len(left.Visit()))}
+			return &object.Integer{Value: int64(len(left.Value))}
 		}
 	case *object.Integer:
 		switch member {
@@ -95,7 +112,7 @@ func evalDotInfixExpression(left object.Object, member string) object.Object {
 				return left
 		}
 	}
-	return newError("%s doesnt support current option '%s'\n", left.Type(), member)
+	return newError("%s doesnt support current option '%s'", left.Type(), member)
 }
 
 func evalStringInfixExpression(

@@ -82,6 +82,9 @@ func (p *Parser) initInfix() {
 		p.infixLookup = make(map[token.TokenKind]infixParseFn)
 	}
 	p.registerInfix(token.PLUS, p.parseBinaryExpression)
+	p.registerInfix(token.MINUS, p.parseBinaryExpression)
+	p.registerInfix(token.SLASH, p.parseBinaryExpression)
+	p.registerInfix(token.ASTERISK, p.parseBinaryExpression)
 	p.registerInfix(token.LPAREN, p.parseCallExpression)
 	p.registerInfix(token.DOT, p.parseMemberAccess)
 }
