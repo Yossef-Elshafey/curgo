@@ -2,6 +2,7 @@ package token
 
 type TokenKind string
 
+// NOTE: some tokens is not recognized by the parser yet
 const (
 	ILLEGAL          =  "ILLEGAL"
 	EOF              =  "EOF"
@@ -27,6 +28,7 @@ const (
 	LBRACKET         =  "["
 	RBRACKET         =  "]"
 	TRANSPILEASSIGN  =  "->"
+	DOT              =  "."
 	COMMENT          =  "//"
 	FETCH            =  "FETCH"
 	ENDFETCH         =  "ENDFETCH"

@@ -158,3 +158,18 @@ func (nl *NumberLiteral) Stringify() string {
 	out.WriteString(s)
 	return out.String()
 }
+
+type MemberAccess struct {
+	Left Expression
+	Operator string
+	Member Expression
+}
+
+func (ma *MemberAccess) iExpr() {}
+func (ma *MemberAccess) Stringify() string {
+	var out bytes.Buffer
+	out.WriteString(ma.Left.Stringify())
+	out.WriteString(ma.Operator)
+	out.WriteString(ma.Member.Stringify())
+	return out.String()
+}

@@ -48,6 +48,14 @@ func Eval(node ast.Node, env *object.Env) object.Object {
 			return right
 		}
 		return evalInfixExpression(node.Operator, left, right)
+
+	case *ast.MemberAccess:
+		left := Eval(node.Left, env)
+		if isError(left) {
+			return left
+		}
+		member := node.Member.Stringify()
+		return evalDotInfixExpression(left, member)
 	case *ast.ExpressionStatement: return Eval(node.Expression, env)
 	case *ast.Identifier: return evalIdentifier(node, env)
 	case *ast.StringLiteral: return &object.String{Value: node.Value}
@@ -71,6 +79,24 @@ func evalInfixExpression(
 	default:
 		return newError("unknown operator: %s %s %s", left.Type(), operator, right.Type())
 	}
+}
+
+func evalDotInfixExpression(left object.Object, member string) object.Object {
+	switch left.Type() {
+	case object.STRING_OBJ:
+		switch member {
+		case "length":
+			return &object.Integer{Value: int64(len(left.Visit()))}
+		}
+	case object.INTEGER_OBJ:
+		switch member {
+			case "plusone":
+				obj := left.(*object.Integer)
+				obj.Value = obj.Value + 1
+				return obj
+		}
+	}
+	return nil
 }
 
 func evalStringInfixExpression(

@@ -27,6 +27,7 @@ const (
 	SUM
 	PRODUCT
 	CALL
+	DOT
 )
 
 var bindingPowerLookup = map[string]bindingPower{
@@ -35,6 +36,7 @@ var bindingPowerLookup = map[string]bindingPower{
 	"*": PRODUCT,
 	"/": PRODUCT,
 	"(": CALL,
+	".": DOT,
 }
 
 func New(l *lexer.Lexer) *Parser {
@@ -81,6 +83,7 @@ func (p *Parser) initInfix() {
 	}
 	p.registerInfix(token.PLUS, p.parseBinaryExpression)
 	p.registerInfix(token.LPAREN, p.parseCallExpression)
+	p.registerInfix(token.DOT, p.parseMemberAccess)
 }
 
 func (p *Parser) registerPrefix(k token.TokenKind, handler prefixParseFn) {
@@ -344,9 +347,6 @@ func (p *Parser) parseCallArgument() ( []ast.Expression, error ) {
 	if !p.expectPeekToBe(token.RPAREN) {
 		return nil, p.syntaxError("expect ')' after call expression")
 	}
-	// if !p.expectPeekToBe(token.SEMICOLON) {
-	// 	return nil, p.syntaxError("expect ';' after call expression")
-	// }
 	return args, nil
 }
 
@@ -372,4 +372,16 @@ func (p *Parser) parseGroupedExpression() ( ast.Expression, error ) {
 		return nil, p.syntaxError("expect ')' after group expressions")
 	}
 	return expr, nil
+}
+
+func (p *Parser) parseMemberAccess(left ast.Expression) (ast.Expression, error) {
+	bexpr := &ast.MemberAccess{Left: left, Operator: p.currentToken.Value}
+	bp := p.currentTokenBindingPower()
+	p.advanceTokens()
+	rhs, err := p.parseExpression(bp)
+	if err != nil {
+		return nil, err
+	}
+	bexpr.Member = rhs
+	return bexpr, nil
 }

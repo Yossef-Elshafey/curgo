@@ -6,6 +6,25 @@ import (
 	"testing"
 )
 
+func TestMemberAccess(t *testing.T) {
+	source := `a.b.c`
+	tokens := lexer.New(source)
+	p := New(tokens)
+	program, err := p.ParseProgram()
+	if err != nil {
+		t.Error(err.Error())
+	}
+	// testInfix(t, program.Statements[0], "a", "." , "b")
+	expr, ok := program.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Errorf("expect program.Statements[0] to exprStatement, got= %t", program.Statements[0])
+	}
+	rightExpr := expr.Expression.(*ast.BinaryExpression).Right
+	testIdentifier(t, rightExpr,"c")
+	leftExpr := expr.Expression.(*ast.BinaryExpression).Left
+	testInfix(t, leftExpr, "a", ".", "b")
+}
+
 func TestIncorrectFetchStatement(t *testing.T) {
 	source := []struct{
 		input string
