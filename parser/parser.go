@@ -375,13 +375,8 @@ func (p *Parser) parseGroupedExpression() ( ast.Expression, error ) {
 }
 
 func (p *Parser) parseMemberAccess(left ast.Expression) (ast.Expression, error) {
-	bexpr := &ast.MemberAccess{Left: left, Operator: p.currentToken.Value}
-	bp := p.currentTokenBindingPower()
+	ma := &ast.MemberAccess{Left: left, Operator: p.currentToken.Value}
 	p.advanceTokens()
-	rhs, err := p.parseExpression(bp)
-	if err != nil {
-		return nil, err
-	}
-	bexpr.Member = rhs
-	return bexpr, nil
+	ma.Member = &ast.Identifier{Token: p.currentToken, Value: p.currentToken.Value}
+	return ma, nil
 }

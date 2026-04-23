@@ -162,7 +162,7 @@ func (nl *NumberLiteral) Stringify() string {
 type MemberAccess struct {
 	Left Expression
 	Operator string
-	Member Expression
+	Member *Identifier
 }
 
 func (ma *MemberAccess) iExpr() {}

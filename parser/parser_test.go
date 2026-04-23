@@ -19,10 +19,10 @@ func TestMemberAccess(t *testing.T) {
 	if !ok {
 		t.Errorf("expect program.Statements[0] to exprStatement, got= %t", program.Statements[0])
 	}
-	rightExpr := expr.Expression.(*ast.BinaryExpression).Right
+	rightExpr := expr.Expression.(*ast.MemberAccess).Member
 	testIdentifier(t, rightExpr,"c")
-	leftExpr := expr.Expression.(*ast.BinaryExpression).Left
-	testInfix(t, leftExpr, "a", ".", "b")
+	leftExpr := expr.Expression.(*ast.MemberAccess).Left
+	testMemberAccess(t, leftExpr, "a", ".", "b")
 }
 
 func TestIncorrectFetchStatement(t *testing.T) {
@@ -149,6 +149,34 @@ func testInfix(
 	}
 
 	if !testLiteralExpression(t, bExp.Right, rhs) {
+		return false
+	}
+
+	return true
+}
+
+func testMemberAccess(
+	t *testing.T,
+	exp ast.Expression,
+	lhs interface{},
+	operator string,
+	rhs string,
+) bool {
+	maExpr, ok := exp.(*ast.MemberAccess)
+	if !ok {
+		t.Errorf("exp is not MemberAccess, got=%T", exp)
+	}
+
+	if !testLiteralExpression(t, maExpr.Left, lhs) {
+		return false
+	}
+
+	if maExpr.Operator != operator {
+		t.Errorf("MemberAccess.operator doesnt match expect=%s, got=%s", operator, maExpr.Operator)
+		return false
+	}
+
+	if !testIdentifier(t, maExpr.Member, rhs) {
 		return false
 	}
 

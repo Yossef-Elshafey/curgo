@@ -82,18 +82,17 @@ func evalInfixExpression(
 }
 
 func evalDotInfixExpression(left object.Object, member string) object.Object {
-	switch left.Type() {
-	case object.STRING_OBJ:
+	switch left := left.(type) {
+	case *object.String:
 		switch member {
 		case "length":
 			return &object.Integer{Value: int64(len(left.Visit()))}
 		}
-	case object.INTEGER_OBJ:
+	case *object.Integer:
 		switch member {
 			case "plusone":
-				obj := left.(*object.Integer)
-				obj.Value = obj.Value + 1
-				return obj
+				left.Value = left.Value + 1
+				return left
 		}
 	}
 	return nil
