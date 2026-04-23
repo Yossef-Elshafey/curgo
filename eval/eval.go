@@ -57,7 +57,7 @@ func Eval(node ast.Node, env *object.Env) object.Object {
 		}
 		return e
 
-	case *ast.MemberAccess:
+	case *ast.SuffixExpression:
 		left := Eval(node.Left, env)
 		if isError(left) {
 			return left

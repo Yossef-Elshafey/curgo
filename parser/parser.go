@@ -86,7 +86,7 @@ func (p *Parser) initInfix() {
 	p.registerInfix(token.SLASH, p.parseBinaryExpression)
 	p.registerInfix(token.ASTERISK, p.parseBinaryExpression)
 	p.registerInfix(token.LPAREN, p.parseCallExpression)
-	p.registerInfix(token.DOT, p.parseMemberAccess)
+	p.registerInfix(token.DOT, p.parseSuffixExpression)
 }
 
 func (p *Parser) registerPrefix(k token.TokenKind, handler prefixParseFn) {
@@ -377,8 +377,8 @@ func (p *Parser) parseGroupedExpression() ( ast.Expression, error ) {
 	return expr, nil
 }
 
-func (p *Parser) parseMemberAccess(left ast.Expression) (ast.Expression, error) {
-	ma := &ast.MemberAccess{Left: left, Operator: p.currentToken.Value}
+func (p *Parser) parseSuffixExpression(left ast.Expression) (ast.Expression, error) {
+	ma := &ast.SuffixExpression{Left: left, Operator: p.currentToken.Value}
 	p.advanceTokens()
 	ma.Member = &ast.Identifier{Token: p.currentToken, Value: p.currentToken.Value}
 	return ma, nil

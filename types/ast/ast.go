@@ -159,17 +159,17 @@ func (nl *NumberLiteral) Stringify() string {
 	return out.String()
 }
 
-type MemberAccess struct {
+type SuffixExpression struct {
 	Left Expression
 	Operator string
 	Member *Identifier
 }
 
-func (ma *MemberAccess) iExpr() {}
-func (ma *MemberAccess) Stringify() string {
+func (se *SuffixExpression) iExpr() {}
+func (se *SuffixExpression) Stringify() string {
 	var out bytes.Buffer
-	out.WriteString(ma.Left.Stringify())
-	out.WriteString(ma.Operator)
-	out.WriteString(ma.Member.Stringify())
+	out.WriteString(se.Left.Stringify())
+	out.WriteString(se.Operator)
+	out.WriteString(se.Member.Stringify())
 	return out.String()
 }
