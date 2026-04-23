@@ -344,9 +344,9 @@ func (p *Parser) parseCallArgument() ( []ast.Expression, error ) {
 	if !p.expectPeekToBe(token.RPAREN) {
 		return nil, p.syntaxError("expect ')' after call expression")
 	}
-	if !p.expectPeekToBe(token.SEMICOLON) {
-		return nil, p.syntaxError("expect ';' after call expression")
-	}
+	// if !p.expectPeekToBe(token.SEMICOLON) {
+	// 	return nil, p.syntaxError("expect ';' after call expression")
+	// }
 	return args, nil
 }
 

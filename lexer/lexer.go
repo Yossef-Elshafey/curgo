@@ -14,7 +14,7 @@ type Lexer struct {
 
 
 func New(source string) *Lexer {
-	l := &Lexer{input: source, line: 0}
+	l := &Lexer{input: source, line: 1}
 	l.readChar()
 	return l
 }
@@ -56,6 +56,10 @@ func (l *Lexer) NextToken() token.Token {
 		if l.peekChar() == '/' {
 			l.readChar()
 			l.readChar()
+			for l.ch != '\n' && l.ch != 0 {
+				l.readChar()
+			}
+			return l.NextToken()
 		} else {
 			tok = newToken(token.SLASH, l.ch, l.line)
 		}
@@ -116,9 +120,6 @@ func (l *Lexer) NextToken() token.Token {
 
 func (l *Lexer) skipWhitespace() {
 	for l.ch == ' ' || l.ch == '\t' || l.ch == '\n' || l.ch == '\r' {
-		if l.ch == '\n' {
-			l.line += 1
-		}
 		l.readChar()
 	}
 }
@@ -128,6 +129,9 @@ func (l *Lexer) readChar() {
 		l.ch = 0
 	} else {
 		l.ch = l.input[l.readPosition]
+	}
+	if l.ch == '\n' {
+		l.line += 1
 	}
 	l.position = l.readPosition
 	l.readPosition += 1

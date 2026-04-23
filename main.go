@@ -33,8 +33,10 @@ func interp(filename string) {
 	}
 
 	env := object.NewEnvironment()
-	e := eval.Eval(program, env)
-	if e != nil {fmt.Printf("%s\n", e.Visit())}
+	e, ok := eval.Eval(program, env).(*object.Error)
+	if ok {
+		fmt.Printf("Error != nil: %s\n", e.Visit())
+	}
 }
 
 func run() {
