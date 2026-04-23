@@ -1,6 +1,4 @@
 *.txt
 .vim/
-.curgo/
-tests/
-./curgo
-./server.js
+/curgo
+/server.js
