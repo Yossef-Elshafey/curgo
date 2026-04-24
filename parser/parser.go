@@ -122,7 +122,7 @@ func (p *Parser) advanceTokens() {
 }
 
 func (p *Parser) syntaxError(msg string) error {
-	return fmt.Errorf("Line %d\n %s\n", p.currentToken.Line, msg)
+	return fmt.Errorf("Parser(%d):\n %s\n", p.currentToken.Line, msg)
 }
 
 func (p *Parser) debugToken() {

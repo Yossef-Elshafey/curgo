@@ -82,6 +82,20 @@ func Eval(node ast.Node, env *object.Env) object.Object {
 	return nil
 }
 
+
+func evalProgram(n *ast.Program, env *object.Env) object.Object {
+	var result object.Object
+	for _, stmt := range n.Statements {
+		result = Eval(stmt, env)
+
+		switch result := result.(type) {
+		case *object.Error:
+			return result
+		}
+	}
+	return result
+}
+
 func evalInfixExpression(
 	operator string,
 	left, right object.Object,
@@ -231,17 +245,4 @@ func evalIdentifier(
 	}
 
 	return newError("identifier not found: %s", node.Value)
-}
-
-func evalProgram(n *ast.Program, env *object.Env) object.Object {
-	var result object.Object
-	for _, stmt := range n.Statements {
-		result = Eval(stmt, env)
-
-		switch result := result.(type) {
-		case *object.Error:
-			return result
-		}
-	}
-	return result
 }
