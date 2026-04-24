@@ -82,7 +82,6 @@ func Eval(node ast.Node, env *object.Env) object.Object {
 	return nil
 }
 
-
 func evalProgram(n *ast.Program, env *object.Env) object.Object {
 	var result object.Object
 	for _, stmt := range n.Statements {
@@ -229,6 +228,9 @@ func isError(obj object.Object) bool {
 }
 
 func newError(format string, a ...interface{}) *object.Error {
+	if a == nil || a[0] == "" { // passing message without formats print EXTRA=nil
+	return &object.Error{Message: fmt.Sprint(format)}
+	}
 	return &object.Error{Message: fmt.Sprintf(format, a...)}
 }
 
