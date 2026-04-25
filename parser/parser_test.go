@@ -6,6 +6,29 @@ import (
 	"testing"
 )
 
+func TestIfStmt(t *testing.T) {
+	source := `if 1 == 1 {
+		let x = 1;
+		let y = x + 1;
+	} else {
+		let y = 2;
+	}`
+	tokens := lexer.New(source)
+	p := New(tokens)
+	program, err := p.ParseProgram()
+	if err != nil {
+		t.Error(err.Error())
+	}
+	testNumberOfStatments(t, len(program.Statements), 1)
+	ifstmt, ok := program.Statements[0].(*ast.IfStmt)
+	if !ok {
+		t.Errorf("expect to get ast.ifstmt, got=%T", program.Statements[0])
+	}
+	testInfix(t, ifstmt.Cond, 1, "==", 1)
+	testNumberOfStatments(t, len(ifstmt.Consequences.Statements), 2)
+	testNumberOfStatments(t, len(ifstmt.Alternative.Statements), 1)
+}
+
 func TestMemberAccess(t *testing.T) {
 	source := `a.b.c`
 	tokens := lexer.New(source)
@@ -14,7 +37,6 @@ func TestMemberAccess(t *testing.T) {
 	if err != nil {
 		t.Error(err.Error())
 	}
-	// testInfix(t, program.Statements[0], "a", "." , "b")
 	expr, ok := program.Statements[0].(*ast.ExpressionStatement)
 	if !ok {
 		t.Errorf("expect program.Statements[0] to exprStatement, got= %T", program.Statements[0])
@@ -244,3 +266,4 @@ func testNumberOfStatments(t *testing.T, got, expected int) {
 		t.Errorf("expect program.Statements to be %d, got=%d", expected, got)
 	}
 }
+

@@ -2,6 +2,7 @@ package lexer
 
 import (
 	token "curgo/types/tokens"
+	"fmt"
 	"testing"
 )
 

@@ -24,19 +24,25 @@ type (
 
 const (
 	LOWEST bindingPower = iota
+	EQUALS // ==
+	LESSGREATER // > or <
 	SUM
 	PRODUCT
-	CALL
+	CALL // (
 	DOT
 )
 
 var bindingPowerLookup = map[string]bindingPower{
-	"+": SUM,
-	"-": SUM,
-	"*": PRODUCT,
-	"/": PRODUCT,
-	"(": CALL,
-	".": DOT,
+	"+":   SUM,
+	"==":  EQUALS,
+	"!=":  EQUALS,
+	"<":   LESSGREATER,
+	">":   LESSGREATER,
+	"-":   SUM,
+	"*":   PRODUCT,
+	"/":   PRODUCT,
+	"(":   CALL,
+	".":   DOT,
 }
 
 func New(l *lexer.Lexer) *Parser {
@@ -54,7 +60,7 @@ func (p *Parser) ParseProgram() ( *ast.Program, error ) {
 	program := &ast.Program{}
 	program.Statements = []ast.Statement{}
 
-	for !p.curTokenIs(token.EOF) {
+	for !p.curTokenIs(token.EOF){
 		stmt, err := p.parseStmt()
 		if err != nil {
 			return nil, err
@@ -81,12 +87,16 @@ func (p *Parser) initInfix() {
 	if p.infixLookup == nil {
 		p.infixLookup = make(map[token.TokenKind]infixParseFn)
 	}
-	p.registerInfix(token.PLUS, p.parseBinaryExpression)
-	p.registerInfix(token.MINUS, p.parseBinaryExpression)
-	p.registerInfix(token.SLASH, p.parseBinaryExpression)
-	p.registerInfix(token.ASTERISK, p.parseBinaryExpression)
-	p.registerInfix(token.LPAREN, p.parseCallExpression)
-	p.registerInfix(token.DOT, p.parseSuffixExpression)
+	p.registerInfix(token.PLUS,      p.parseBinaryExpression)
+	p.registerInfix(token.MINUS,     p.parseBinaryExpression)
+	p.registerInfix(token.SLASH,     p.parseBinaryExpression)
+	p.registerInfix(token.ASTERISK,  p.parseBinaryExpression)
+	p.registerInfix(token.LPAREN,    p.parseCallExpression)
+	p.registerInfix(token.DOT,       p.parseSuffixExpression)
+	p.registerInfix(token.EQ,        p.parseBinaryExpression)
+	p.registerInfix(token.NOT_EQ,    p.parseBinaryExpression)
+	p.registerInfix(token.LT,        p.parseBinaryExpression)
+	p.registerInfix(token.GT,        p.parseBinaryExpression)
 }
 
 func (p *Parser) registerPrefix(k token.TokenKind, handler prefixParseFn) {
@@ -166,6 +176,8 @@ func (p *Parser) parseStmt() ( ast.Statement, error ) {
 		return p.parseFetchStatment()
 	case token.LET:
 		return p.parseLetStmt()
+	case token.IF:
+		return p.parseIfStmt()
 	default:
 		return p.parseExpressionStatement()
 	}
@@ -284,7 +296,7 @@ func (p *Parser) parseFetchBody() ( ast.Statement, error ) {
 func (p *Parser) parseExpression(bp bindingPower) ( ast.Expression, error ) {
 	prefix := p.prefixLookup[p.currentToken.Kind]
 	if prefix == nil {
-		return nil, p.syntaxError("prefix not supported" + p.currentToken.Value)
+		return nil, p.syntaxError(fmt.Sprintf("prefix not supported '%s'", p.currentToken.Value))
 	}
 	left, err := prefix()
 	if err != nil {
@@ -382,4 +394,64 @@ func (p *Parser) parseSuffixExpression(left ast.Expression) (ast.Expression, err
 	p.advanceTokens()
 	ma.Member = &ast.Identifier{Token: p.currentToken, Value: p.currentToken.Value}
 	return ma, nil
+}
+
+func (p *Parser) parseIfStmt() (*ast.IfStmt, error) {
+	ifst := &ast.IfStmt{}
+	ifst.Token = p.currentToken
+	p.advanceTokens()
+	cond, err := p.parseExpression(LOWEST)
+	if err != nil {
+		return nil, err
+	}
+	ifst.Cond = cond
+	if !p.expectPeekToBe(token.LBRACE) {
+		return nil, p.syntaxError("expect '{ after cond")
+	}
+	consq, err := p.parseBlockStatement()
+	if err != nil {
+		return nil, err
+	}
+
+	ifst.Consequences = consq
+	if p.peekTokenIs(token.ELSE) {
+		alt, err := p.parseElseStmt()
+		if err != nil {
+			return nil, err
+		}
+		ifst.Alternative = alt
+	}
+	return ifst, nil
+}
+
+func (p *Parser) parseBlockStatement() ( *ast.BlockStatement, error ) {
+	block := &ast.BlockStatement{Token: p.currentToken}
+	block.Statements = []ast.Statement{}
+
+	p.advanceTokens()
+
+	for !p.curTokenIs(token.RBRACE) && !p.curTokenIs(token.EOF) {
+		stmt, err  := p.parseStmt()
+		if err != nil {
+			return nil, err
+		}
+		if stmt != nil {
+			block.Statements = append(block.Statements, stmt)
+		}
+		p.advanceTokens()
+	}
+
+	return block, nil
+}
+
+func (p *Parser) parseElseStmt() ( *ast.BlockStatement, error ) {
+	p.advanceTokens() // makes current = TK(else)
+	if !p.expectPeekToBe(token.LBRACE) {
+		return nil, p.syntaxError(fmt.Sprintf("Expect '{' after else got '%s'", p.peekToken.Value))
+	}
+	alt, err := p.parseBlockStatement()
+	if err != nil {
+		return nil, err
+	}
+	return alt, nil
 }

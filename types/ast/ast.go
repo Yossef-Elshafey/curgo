@@ -173,3 +173,34 @@ func (se *SuffixExpression) Stringify() string {
 	out.WriteString(se.Member.Stringify())
 	return out.String()
 }
+
+type BlockStatement struct {
+	Token      token.Token
+	Statements []Statement
+}
+
+func (bs *BlockStatement) iStmt()       {}
+func (bs *BlockStatement) Stringify() string {
+	var out bytes.Buffer
+
+	for _, s := range bs.Statements {
+		out.WriteString(s.Stringify())
+	}
+
+	return out.String()
+}
+
+type IfStmt struct {
+	Token         token.Token
+	Cond          Expression
+	Consequences  *BlockStatement
+	Alternative   *BlockStatement
+}
+
+func (is *IfStmt) iStmt() {}
+func (is *IfStmt) Stringify() string {
+	var out bytes.Buffer
+	out.WriteString(is.Cond.Stringify())
+	out.WriteString(is.Consequences.Stringify())
+	return out.String()
+}
