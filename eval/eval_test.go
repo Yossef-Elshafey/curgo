@@ -4,6 +4,7 @@ import (
 	"curgo/lexer"
 	"curgo/parser"
 	"curgo/types/object"
+	"strings"
 	"testing"
 )
 
@@ -113,5 +114,185 @@ func TestArthmeticOps(t *testing.T) {
 		if i.Value != int64(s.expected) {
 			t.Errorf("expect %d, got= %d",s.expected, i.Value)
 		}
+	}
+}
+
+func TestStringConcat(t *testing.T) {
+	source := `let x = "hello"; let y = "world"; x + y`
+	tokens := lexer.New(source)
+	p := parser.New(tokens)
+	program, _ := p.ParseProgram()
+	env := object.NewEnvironment()
+	eval := Eval(program, env)
+	s, ok := eval.(*object.String)
+	if !ok {
+		t.Errorf("expect object.String, got=%T", eval)
+	}
+	if s.Value != "helloworld" {
+		t.Errorf("expect 'helloworld', got= %s", s.Value)
+	}
+}
+
+func TestStringLength(t *testing.T) {
+	source := `let s = "test"; s.length`
+	tokens := lexer.New(source)
+	p := parser.New(tokens)
+	program, _ := p.ParseProgram()
+	env := object.NewEnvironment()
+	eval := Eval(program, env)
+	i, ok := eval.(*object.Integer)
+	if !ok {
+		t.Errorf("expect object.Integer, got=%T", eval)
+	}
+	if i.Value != 4 {
+		t.Errorf("expect 4, got= %d", i.Value)
+	}
+}
+
+func TestLetStatement(t *testing.T) {
+	source := `
+	let x = 10;
+	let y = 20;
+	x + y
+	`
+	tokens := lexer.New(source)
+	p := parser.New(tokens)
+	program, _ := p.ParseProgram()
+	env := object.NewEnvironment()
+	eval := Eval(program, env)
+	i, ok := eval.(*object.Integer)
+	if !ok {
+		t.Errorf("expect object.Integer, got=%T", eval)
+	}
+	if i.Value != 30 {
+		t.Errorf("expect 30, got= %d", i.Value)
+	}
+}
+
+func TestBuiltinPrint(t *testing.T) {
+	source := `print("test")`
+	tokens := lexer.New(source)
+	p := parser.New(tokens)
+	program, _ := p.ParseProgram()
+	env := object.NewEnvironment()
+	eval := Eval(program, env)
+	if eval != nil {
+		t.Errorf("expect nil, got=%T", eval)
+	}
+}
+
+func TestEvalEmptyProgram(t *testing.T) {
+	source := ``
+	tokens := lexer.New(source)
+	p := parser.New(tokens)
+	program, _ := p.ParseProgram()
+	env := object.NewEnvironment()
+	eval := Eval(program, env)
+	if eval != nil {
+		t.Errorf("expect nil, got=%T", eval)
+	}
+}
+
+func TestEvalIdentifierFromEnv(t *testing.T) {
+	source := `x`
+	tokens := lexer.New(source)
+	p := parser.New(tokens)
+	program, _ := p.ParseProgram()
+	env := object.NewEnvironment()
+	env.Set("x", &object.String{Value: "hello"})
+	eval := Eval(program, env)
+	s, ok := eval.(*object.String)
+	if !ok {
+		t.Errorf("expect object.String, got=%T", eval)
+	}
+	if s.Value != "hello" {
+		t.Errorf("expect 'hello', got= %s", s.Value)
+	}
+}
+
+func TestEvalNumberLiteral(t *testing.T) {
+	source := `42`
+	tokens := lexer.New(source)
+	p := parser.New(tokens)
+	program, _ := p.ParseProgram()
+	env := object.NewEnvironment()
+	eval := Eval(program, env)
+	i, ok := eval.(*object.Integer)
+	if !ok {
+		t.Errorf("expect object.Integer, got=%T", eval)
+	}
+	if i.Value != 42 {
+		t.Errorf("expect 42, got= %d", i.Value)
+	}
+}
+
+func TestEvalStringLiteral(t *testing.T) {
+	source := `"curgo"`
+	tokens := lexer.New(source)
+	p := parser.New(tokens)
+	program, _ := p.ParseProgram()
+	env := object.NewEnvironment()
+	eval := Eval(program, env)
+	s, ok := eval.(*object.String)
+	if !ok {
+		t.Errorf("expect object.String, got=%T", eval)
+	}
+	if s.Value != "curgo" {
+		t.Errorf("expect 'curgo', got= %s", s.Value)
+	}
+}
+
+func TestExpressionStatement(t *testing.T) {
+	source := `(5 + 3)`
+	tokens := lexer.New(source)
+	p := parser.New(tokens)
+	program, _ := p.ParseProgram()
+	env := object.NewEnvironment()
+	eval := Eval(program, env)
+	i, ok := eval.(*object.Integer)
+	if !ok {
+		t.Errorf("expect object.Integer, got=%T", eval)
+	}
+	if i.Value != 8 {
+		t.Errorf("expect 8, got= %d", i.Value)
+	}
+}
+
+func TestIdentifierShadowing(t *testing.T) {
+	source := `
+	let x = 5;
+	let x = 10;
+	x
+	`
+	tokens := lexer.New(source)
+	p := parser.New(tokens)
+	program, _ := p.ParseProgram()
+	env := object.NewEnvironment()
+	eval := Eval(program, env)
+	i, ok := eval.(*object.Integer)
+	if !ok {
+		t.Errorf("expect object.Integer, got=%T", eval)
+	}
+	if i.Value != 10 {
+		t.Errorf("expect 10, got= %d", i.Value)
+	}
+}
+
+func TestDivisionByZero(t *testing.T) {
+	source := `
+	let x = 1 / 0;
+	x
+	`
+	tokens := lexer.New(source)
+	p := parser.New(tokens)
+	program, _ := p.ParseProgram()
+	env := object.NewEnvironment()
+	eval := Eval(program, env)
+	i, ok := eval.(*object.Error)
+	if !ok {
+		t.Errorf("expect object.error, got=%T", eval)
+	}
+	if !strings.Contains(i.Message, "division by zero") {
+		t.Errorf("error message donest include 'division by zero'")
 	}
 }

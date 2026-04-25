@@ -72,7 +72,7 @@ func (cr *CurgoRequest) buildRequest(k,v string) error {
 			cr.req.URL = url
 		case METHOD: cr.req.Method = v
 		case BODY: cr.req.Body = io.NopCloser(strings.NewReader(v))
-		case NONE: return fmt.Errorf("cant transpile %s", k)
+		case NONE: return fmt.Errorf("cant transpile %s", k) // NOTE:
 	}
 	return nil
 }

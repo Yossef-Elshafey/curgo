@@ -156,6 +156,9 @@ func evalIntegerInfixExpression(
 	case "*":
 		return &object.Integer{Value: leftVal * rightVal}
 	case "/":
+		if rightVal == 0 {
+			return newError("division by zero")
+		}
 		return &object.Integer{Value: leftVal / rightVal}
 	default:
 		return newError("unknown operator: %s %s %s",
@@ -228,9 +231,7 @@ func isError(obj object.Object) bool {
 }
 
 func newError(format string, a ...interface{}) *object.Error {
-	if a == nil || a[0] == "" { // passing message without formats print EXTRA=nil
-	return &object.Error{Message: fmt.Sprint(format)}
-	}
+	if a == nil || a[0] == "" { return &object.Error{Message: fmt.Sprint(format)} }
 	return &object.Error{Message: fmt.Sprintf(format, a...)}
 }
 
