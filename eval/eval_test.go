@@ -8,6 +8,59 @@ import (
 	"testing"
 )
 
+func TestSingleObjectIfCond(t *testing.T) {
+	source := `
+	let x = 1 == 1;
+	if x { 200 }
+	`
+	tokens := lexer.New(source)
+	p := parser.New(tokens)
+	program, _ := p.ParseProgram()
+	env := object.NewEnvironment()
+	e := Eval(program, env)
+	obj := e.(*object.Integer)
+	if obj.Value != 200 {
+		t.Errorf("expect= %d, instead got %d", 200, obj.Value)
+	}
+}
+
+func TestIfCondition(t *testing.T) {
+	sources := []struct{
+		input string
+		expected int
+	}{
+		{`if (1 + 2) == 3 {let x = 1; x}`, 1},
+		{`
+			if 1 != 1 { let x = 1; x }
+			else { let x = 2; x } `, 2},
+		{`
+			let x = 0;
+			if 1 != 1 { let x = 1; x }
+			else { let x = 2; x } `, 2},
+
+		{`
+			let x = 100;
+			if "hello" == "hello" { x }
+			`, 100},
+
+		{`
+			let x = 100;
+			if ("hello" + " " + "yossef") != "hello yossef" { x } else {200}
+			`, 200},
+		}
+	for _, source := range sources {
+		tokens := lexer.New(source.input)
+		p := parser.New(tokens)
+		program, _ := p.ParseProgram()
+		env := object.NewEnvironment()
+		e := Eval(program, env)
+		obj := e.(*object.Integer)
+		if obj.Value != int64(source.expected) {
+			t.Errorf("expect= %d, instead got %d", source.expected, obj.Value)
+		}
+	}
+}
+
 func TestTypeMismatchInfixExpression(t *testing.T) {
 	source := `
 	let x = "";

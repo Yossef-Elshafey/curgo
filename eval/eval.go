@@ -6,6 +6,11 @@ import (
 	"fmt"
 )
 
+var (
+	CUR_TRUE  = &object.Boolean{Value: true}
+	CUR_FALSE = &object.Boolean{Value: false}
+)
+
 func Eval(node ast.Node, env *object.Env) object.Object {
 	switch node := node.(type) {
 	case *ast.Program: return evalProgram(node, env)
@@ -78,8 +83,24 @@ func Eval(node ast.Node, env *object.Env) object.Object {
 	case *ast.StringLiteral: return &object.String{Value: node.Value}
 	case *ast.NumberLiteral: return &object.Integer{Value: node.Value}
 	case *ast.CurgoAssignStatment: return &object.CurgoCall{Key: node.Arg.Value, Value: Eval(node.Value, env)}
+	case *ast.IfStmt: return evalIf(node, env)
+	case *ast.BlockStatement: return evalBlockStmt(node, env)
 	}
 	return nil
+}
+
+func evalBlockStmt(n *ast.BlockStatement, env *object.Env) object.Object {
+	// NOTE: to be used in the future for return stmts ex. for, if, functions
+	var result object.Object
+	for _, stmt := range n.Statements {
+		result = Eval(stmt, env)
+
+		switch result := result.(type) {
+		case *object.Error:
+			return result
+		}
+	}
+	return result
 }
 
 func evalProgram(n *ast.Program, env *object.Env) object.Object {
@@ -99,16 +120,29 @@ func evalInfixExpression(
 	operator string,
 	left, right object.Object,
 ) object.Object {
-	switch {
-	case left.Type() == object.INTEGER_OBJ && right.Type() == object.INTEGER_OBJ:
+	if left.Type() == object.INTEGER_OBJ && right.Type() == object.INTEGER_OBJ {
 		return evalIntegerInfixExpression(operator, left, right)
-	case left.Type() != right.Type():
-		return newError("type mismatch: %s %s %s", left.Type(), operator, right.Type())
-	case left.Type() == object.STRING_OBJ && right.Type() == object.STRING_OBJ:
-		return evalStringInfixExpression(operator, left, right)
-	default:
-		return newError("unknown operator: %s %s %s", left.Type(), operator, right.Type())
 	}
+	if left.Type() != right.Type() {
+		return newError("type mismatch: %s %s %s", left.Type(), operator, right.Type())
+	}
+	if left.Type() == object.STRING_OBJ && right.Type() == object.STRING_OBJ {
+		return evalStringInfixExpression(operator, left, right)
+	}
+	if operator == "=="  {
+		return nativeBooleanObject(left == right)
+	}
+	if operator == "!=" {
+		return nativeBooleanObject(left != right)
+	}
+	return newError("unknown operator: %s %s %s", left.Type(), operator, right.Type())
+}
+
+func nativeBooleanObject(inp bool) object.Object {
+	if inp {
+		return CUR_TRUE
+	}
+	return CUR_FALSE
 }
 
 func evalMemberAccessExpr(left object.Object, member string) object.Object {
@@ -132,13 +166,13 @@ func evalStringInfixExpression(
 	operator string,
 	left, right object.Object,
 ) object.Object {
-	if operator != "+" {
-		return newError("unknown operator: %s %s %s", left.Type(), operator, right.Type())
-	}
-
 	leftVal := left.(*object.String).Value
 	rightVal := right.(*object.String).Value
-	return &object.String{Value: leftVal + rightVal}
+
+	if operator == "+"  { return &object.String{Value: leftVal + rightVal} }
+	if operator == "==" { return nativeBooleanObject(leftVal == rightVal) }
+	if operator == "!=" { return nativeBooleanObject(leftVal != rightVal) }
+	return newError("unknown operator '%s' between string", operator)
 }
 
 func evalIntegerInfixExpression(
@@ -160,6 +194,10 @@ func evalIntegerInfixExpression(
 			return newError("division by zero")
 		}
 		return &object.Integer{Value: leftVal / rightVal}
+	case "==":
+		return nativeBooleanObject(leftVal == rightVal)
+	case "!=":
+		return nativeBooleanObject(leftVal != rightVal)
 	default:
 		return newError("unknown operator: %s %s %s",
 			left.Type(), operator, right.Type())
@@ -193,7 +231,6 @@ func applyFunction(fn object.Object, args []object.Object) object.Object {
 	}
 	return newError("not a function: %T", fn)
 }
-
 
 func extendFunctionEnv(
 	fn *object.FetchFunction,
@@ -248,4 +285,26 @@ func evalIdentifier(
 	}
 
 	return newError("identifier not found: %s", node.Value)
+}
+
+func evalIf(node *ast.IfStmt, env *object.Env) object.Object {
+	cond := Eval(node.Cond, env)
+	if isError(cond) {
+		return newError("Evaluator(%d): %s", node.Token.Line, cond.Visit())
+	}
+	if cond == CUR_TRUE {
+		e := Eval(node.Consequences, env)
+		if isError(e) {
+			return newError("Evaluator(%d): %s", node.Token.Line, e.Visit())
+		}
+		return e
+	}
+	if cond == CUR_FALSE && node.Alternative != nil {
+		e := Eval(node.Alternative, env)
+		if isError(e) {
+			return newError("Evaluator(%d): %s", node.Token.Line, e.Visit())
+		}
+		return e
+	}
+	return nil
 }

@@ -19,6 +19,8 @@ const (
 	CALLPARAM     =  "CALLPARAM"
 	RESPONSE      =  "RESPONSE"
 	BUILTIN       =  "BUILTIN"
+	BOOLEAN       =  "BOOLEAN"
+	NULL          =  "NULL"
 )
 
 type Object interface { 
@@ -83,3 +85,15 @@ type Builtin struct {
 
 func (b *Builtin) Type() ObjectType { return BUILTIN }
 func (b *Builtin) Visit() string { return fmt.Sprintf("fn(%+v)", b.Fn) }
+
+type Boolean struct {
+	Value bool
+}
+
+func (b *Boolean) Type() ObjectType { return BOOLEAN }
+func (b *Boolean) Visit() string { return fmt.Sprintf("%t", b.Value)}
+
+type Null struct {}
+
+func (n *Null) Type() ObjectType { return NULL }
+func (n *Null) Visit() string { return fmt.Sprintf("%s", "Null")}
