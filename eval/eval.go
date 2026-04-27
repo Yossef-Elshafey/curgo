@@ -3,6 +3,7 @@ package eval
 import (
 	"curgo/types/ast"
 	"curgo/types/object"
+	"curgo/utils"
 	"fmt"
 )
 
@@ -82,7 +83,15 @@ func Eval(node ast.Node, env *object.Env) object.Object {
 		return e
 	case *ast.StringLiteral: return &object.String{Value: node.Value}
 	case *ast.NumberLiteral: return &object.Integer{Value: node.Value}
-	case *ast.CurgoAssignStatment: return &object.CurgoCall{Key: node.Arg.Value, Value: Eval(node.Value, env)}
+	case *ast.CurgoAssignStatment: 
+		cc := &object.CurgoCall{}
+		cc.Key = node.Arg.Value
+		v := Eval(node.Value, env)
+		if isError(v) {
+			return newError(v.Visit(), "")
+		}
+		cc.Value = v
+		return cc
 	case *ast.IfStmt: return evalIf(node, env)
 	case *ast.BlockStatement: return evalBlockStmt(node, env)
 	}
@@ -148,16 +157,15 @@ func nativeBooleanObject(inp bool) object.Object {
 func evalMemberAccessExpr(left object.Object, member string) object.Object {
 	switch left := left.(type) {
 	case *object.String:
-		switch member {
-		case "length":
-			return &object.Integer{Value: int64(len(left.Value))}
-		}
+		return evalStringMembers(left,member)
 	case *object.Integer:
 		switch member {
-			case "plusone":
+			case "plusone": // javascript lib until creating a function for integer
 				left.Value = left.Value + 1
 				return left
 		}
+	case *object.Response:
+		return evalResponseMembers(left,member)
 	}
 	return newError("%s doesnt support current option '%s'", left.Type(), member)
 }
@@ -205,31 +213,39 @@ func evalIntegerInfixExpression(
 }
 
 func applyFunction(fn object.Object, args []object.Object) object.Object {
-	cr := New()
 	switch fn := fn.(type) {
 		case *object.FetchFunction:
-			if len(args) != len(fn.Params) {
-				return newError("fetch %s expects %d argument, got= %d",
-					fn.Token.Value, len(fn.Params), len(args) )
-			}
-			extendedEnv := extendFunctionEnv(fn, args)
-			for _, stmt := range fn.Body {
-				cp, ok := Eval(stmt, extendedEnv).(*object.CurgoCall)
-				if !ok {
-					return newError("can't evluate stmt of %T", cp)
-				}
-				val, ok := cp.Value.(*object.String)
-				if !ok { return newError("curgo request value is not string") }
-				err := cr.buildRequest(cp.Key, val.Value)
-				if err != nil { return newError(err.Error(), nil) }
-			}
-			resp, err := cr.fire()
-			if err != nil { return newError(err.Error(), nil)}
-			return &object.Response{Res: resp}
+			return evalFetchFunction(fn, args)
 		case *object.Builtin:
 			return fn.Fn(args...)
 	}
 	return newError("not a function: %T", fn)
+}
+
+func evalFetchFunction(fn *object.FetchFunction, args []object.Object) object.Object {
+	rb := utils.NewRequestBuilder()
+	if len(args) != len(fn.Params) {
+		return newError("fetch %s expects %d argument, got= %d",
+			fn.Token.Value, len(fn.Params), len(args) )
+	}
+	extendedEnv := extendFunctionEnv(fn, args)
+	for _, stmt := range fn.Body {
+		e := Eval(stmt, extendedEnv)
+		if isError(e) {
+			return newError(e.Visit(), "")
+		}
+		cp, ok := e.(*object.CurgoCall)
+		if !ok {
+			return newError("can't evluate stmt of %T", cp)
+		}
+		strObj, ok := cp.Value.(*object.String)
+		if !ok { return newError("curgo request value is not string %s", cp.Value.Visit()) }
+		err := rb.BuildRequest(cp.Key, strObj.Value)
+		if err != nil { return newError(err.Error(), "") }
+	}
+	resp, err := rb.Fire()
+	if err != nil { return newError(err.Error(), "")}
+	return &object.Response{Res: resp}
 }
 
 func extendFunctionEnv(

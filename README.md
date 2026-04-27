@@ -10,3 +10,5 @@
       response should not abort the evaluator
 - [ ] there has to be a concrete way to handle errors in evaluator since ignoring the check of
       an object.Error(isError) make it keep flying while tree walking
+- [ ] instead of creating request file in eval attach its function properties
+      to object.Response itself
