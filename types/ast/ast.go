@@ -204,3 +204,48 @@ func (is *IfStmt) Stringify() string {
 	out.WriteString(is.Consequences.Stringify())
 	return out.String()
 }
+
+type Indexing struct {
+	Token   token.Token
+	Ident   Expression
+	Target  Expression
+}
+
+func (i *Indexing) iExpr() {}
+func (i *Indexing) Stringify() string {
+	var out bytes.Buffer
+	out.WriteString(i.Ident.Stringify())
+	out.WriteString(i.Target.Stringify())
+	return out.String()
+}
+
+
+type ArrayLiteral struct {
+	Token   token.Token
+	Elements []Expression
+}
+
+func (al *ArrayLiteral) iExpr() {}
+func (al *ArrayLiteral) Stringify() string {
+	var out bytes.Buffer
+	out.WriteString(al.Token.Value)
+	for _, elm := range al.Elements {
+		out.WriteString(elm.Stringify())
+	}
+	return out.String()
+}
+
+type MapLiteral struct {
+	Token   token.Token
+	Elements map[string]Expression
+}
+
+func (ml *MapLiteral) iExpr() {}
+func (ml *MapLiteral) Stringify() string {
+	var out bytes.Buffer
+	out.WriteString(ml.Token.Value)
+	for _, elm := range ml.Elements {
+		out.WriteString(elm.Stringify())
+	}
+	return out.String()
+}

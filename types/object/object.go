@@ -71,11 +71,18 @@ func (cc *CurgoCall) Visit() string { return fmt.Sprintf("%s -> %s", cc.Key, cc.
 
 type Response struct {
 	Res *http.Response
+	Opts map[string]bool
 }
 
 func (r *Response) Type() ObjectType { return RESPONSE}
-func (r *Response) Visit() string { return fmt.Sprintf("%+v", r.Res)}
-
+func (r *Response) Visit() string {
+	if r.Opts == nil {
+		r.Opts = make(map[string]bool)
+	}
+	r.Opts["status"] = true
+	r.Opts["statusText"] = true
+	return fmt.Sprintf("%+v", r.Opts)
+}
 
 type BuiltinFunction func(args ...Object) Object
 

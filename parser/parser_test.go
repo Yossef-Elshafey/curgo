@@ -6,6 +6,94 @@ import (
 	"testing"
 )
 
+func TestMapLiteral(t *testing.T) {
+	source := `let cord = {x:2, y:4};`
+	tokens := lexer.New(source)
+	p := New(tokens)
+	program, err := p.ParseProgram()
+	if err != nil {
+		t.Error(err.Error())
+	}
+	testNumberOfStatments(t, len(program.Statements), 1)
+	letStmt, ok := program.Statements[0].(*ast.LetStatement)
+	if !ok {
+		t.Errorf("expect program.Statements[0] to be letstmt, got= %T", program.Statements[0])
+	}
+	mapLiteral, ok := letStmt.Value.(*ast.MapLiteral)
+	if !ok {
+		t.Errorf("expect letStmt value to be MapLiteral, got= %T", letStmt.Value)
+	}
+	val, ok := mapLiteral.Elements["x"]
+	if !ok {
+		t.Errorf("expect map value of 'x'")
+	}
+	vInt, _ := val.(*ast.NumberLiteral)
+	if vInt.Value != 2 {
+		t.Errorf("expect map values of 'x' to be 2, got=%d", vInt.Value)
+	}
+
+	val, ok = mapLiteral.Elements["y"]
+	if !ok {
+		t.Errorf("expect map value of 'y'")
+	}
+	vInt, _ = val.(*ast.NumberLiteral)
+	if vInt.Value != 4 {
+		t.Errorf("expect map values of 'y' to be 4, got=%d", vInt.Value)
+	}
+}
+
+func TestIndexing(t *testing.T) {
+	source := `x[0]`
+	tokens := lexer.New(source)
+	p := New(tokens)
+	program, err := p.ParseProgram()
+	if err != nil {
+		t.Error(err.Error())
+	}
+	testNumberOfStatments(t, len(program.Statements), 1)
+	stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Errorf("expect program.Statements[0] to be ast.ExpressionStatement, got=%T", program.Statements[0])
+	}
+	expr, ok := stmt.Expression.(*ast.Indexing)
+	if expr.Ident.Stringify() != "x" {
+		t.Errorf("expect identifier to be 'x', got=%s", expr.Ident.Stringify())
+	}
+	num, ok := expr.Target.(*ast.NumberLiteral)
+	if !ok {
+		t.Errorf("expect expr.Target to be NumberLiteral, got= %T", expr.Target)
+	}
+	if num.Value != 0 {
+		t.Errorf("expect to access index of '0', got=%v", expr.Target)
+	}
+}
+
+func TestArrayLieral(t *testing.T) {
+	source := `let x = [1,2,3];`
+	tokens := lexer.New(source)
+	p := New(tokens)
+	program, err := p.ParseProgram()
+	if err != nil {
+		t.Error(err.Error())
+	}
+	stmt, ok := program.Statements[0].(*ast.LetStatement)
+	if !ok {
+		t.Errorf("expect program.Statements[0] to be ast.LetStatement, got=%T", program.Statements[0])
+	}
+	expr, ok := stmt.Value.(*ast.ArrayLiteral)
+	if !ok {
+		t.Errorf("expect let stmt.Value to ast.ArrayLiteral, got=%T", stmt.Value)
+	}
+	testNumberOfStatments(t, len(expr.Elements), 3)
+	num, ok := expr.Elements[0].(*ast.NumberLiteral)
+	if !ok {
+		t.Errorf("expect expr.Elements[0] to be NumberLiteral, got=%T", expr.Elements[0])
+	}
+	if num.Value != 1 {
+		t.Errorf("expect first value in array to be %d, got=%d", 1, num.Value)
+	}
+}
+
 func TestIfStmt(t *testing.T) {
 	source := `if 1 == 1 {
 		let x = 1;

@@ -30,6 +30,8 @@ const (
 	PRODUCT
 	CALL // (
 	DOT
+	INDEX
+	MAP_INIT
 )
 
 var bindingPowerLookup = map[string]bindingPower{
@@ -43,6 +45,8 @@ var bindingPowerLookup = map[string]bindingPower{
 	"/":   PRODUCT,
 	"(":   CALL,
 	".":   DOT,
+	"[":   INDEX,
+	":":   MAP_INIT,
 }
 
 func New(l *lexer.Lexer) *Parser {
@@ -81,6 +85,8 @@ func (p *Parser) initPrefix() {
 	p.registerPrefix(token.STRING,      p.parseStringLiteral)
 	p.registerPrefix(token.NUMBER,      p.parseNumberLiteral)
 	p.registerPrefix(token.LPAREN,      p.parseGroupedExpression)
+	p.registerPrefix(token.LBRACKET,    p.parseArrayLiteral)
+	p.registerPrefix(token.LBRACE,      p.parseMapLiteral)
 }
 
 func (p *Parser) initInfix() {
@@ -97,6 +103,8 @@ func (p *Parser) initInfix() {
 	p.registerInfix(token.NOT_EQ,    p.parseBinaryExpression)
 	p.registerInfix(token.LT,        p.parseBinaryExpression)
 	p.registerInfix(token.GT,        p.parseBinaryExpression)
+	p.registerInfix(token.LBRACKET,  p.parseIndexing)
+	p.registerInfix(token.COLON,     p.parseBinaryExpression)
 }
 
 func (p *Parser) registerPrefix(k token.TokenKind, handler prefixParseFn) {
@@ -330,7 +338,7 @@ func (p *Parser) parseNumberLiteral() ( ast.Expression, error ) {
 
 func (p *Parser) parseCallExpression(fs ast.Expression) ( ast.Expression, error ) {
 	ce := &ast.CallExpression{Token: p.currentToken, Function: fs}
-	ca, err := p.parseCallArgument()
+	ca, err := p.parseExpressionElements(token.RPAREN)
 	if err != nil {
 		return nil, err
 	}
@@ -338,9 +346,10 @@ func (p *Parser) parseCallExpression(fs ast.Expression) ( ast.Expression, error 
 	return ce, nil
 }
 
-func (p *Parser) parseCallArgument() ( []ast.Expression, error ) {
+/* ex. Ltoken exp1, expr2, ..., exprn Rtoken(stopAt), caller has to consume Ltoken */
+func (p *Parser) parseExpressionElements(stopAt token.TokenKind) ( []ast.Expression, error ) {
 	args := []ast.Expression{}
-	if p.peekTokenIs(token.RPAREN) {
+	if p.peekTokenIs(stopAt) {
 		p.advanceTokens()
 		return args, nil
 	}
@@ -359,8 +368,8 @@ func (p *Parser) parseCallArgument() ( []ast.Expression, error ) {
 		}
 		args = append(args, arg)
 	}
-	if !p.expectPeekToBe(token.RPAREN) {
-		return nil, p.syntaxError("expect ')' after call expression")
+	if !p.expectPeekToBe(stopAt) {
+		return nil, p.syntaxError(fmt.Sprintf("expect '%s' got= %s", stopAt, p.currentToken.Value))
 	}
 	return args, nil
 }
@@ -454,4 +463,78 @@ func (p *Parser) parseElseStmt() ( *ast.BlockStatement, error ) {
 		return nil, err
 	}
 	return alt, nil
+}
+
+func (p *Parser) parseIndexing(lhs ast.Expression) ( ast.Expression, error ) {
+	indx := &ast.Indexing{}
+	indx.Token = p.currentToken
+	indx.Ident = lhs
+	if p.peekTokenIs(token.RBRACKET) {
+		return nil, p.syntaxError("empty variable indexing")
+	}
+	p.advanceTokens()
+	expr, err := p.parseExpression(LOWEST)
+	if err != nil {
+		return nil, p.syntaxError(err.Error())
+	}
+
+	indx.Target = expr
+	if !p.expectPeekToBe(token.RBRACKET) {
+		return nil, p.syntaxError("expect ']' after variable indexing")
+	}
+	return indx, nil
+}
+
+func (p *Parser) parseArrayLiteral() (ast.Expression, error) {
+	al := &ast.ArrayLiteral{}
+	al.Token = p.currentToken // [
+	elems, err := p.parseExpressionElements(token.RBRACKET)
+	if err != nil {
+		return nil, p.syntaxError(err.Error())
+	}
+	al.Elements = elems
+	return al, nil
+}
+
+func (p *Parser) parseMapLiteral() ( ast.Expression, error ) {
+	ml := &ast.MapLiteral{}
+	ml.Elements = make(map[string]ast.Expression)
+	ml.Token = p.currentToken // {
+	p.advanceTokens()
+	err := p.parseMapValues(ml.Elements)
+	if err != nil {
+		return nil, p.syntaxError(err.Error())
+	}
+	for p.peekTokenIs(token.COMMA) && (!p.curTokenIs(token.EOF) || !p.peekTokenIs(token.EOF)) {
+		p.advanceTokens()
+		p.advanceTokens()
+		err := p.parseMapValues(ml.Elements)
+		if err != nil {
+			return nil, p.syntaxError(err.Error())
+		}
+	}
+	fmt.Printf("%+v\n", ml.Elements["y"])
+	p.debugToken()
+	if !p.expectPeekToBe(token.RBRACE) {
+		return nil, p.syntaxError(fmt.Sprintf("Expect '{' after map, got= %s", p.peekToken.Value))
+	}
+	return ml, nil
+}
+
+func (p *Parser) parseMapValues(m map[string]ast.Expression) error {
+	v, err := p.parseExpression(LOWEST)
+	if err != nil {
+		return p.syntaxError(err.Error())
+	}
+	expr, ok := v.(*ast.BinaryExpression) // : colon is mapped to BinaryExpression
+	if !ok {
+		return p.syntaxError("cannot parse map values")
+	}
+	key, ok := expr.Left.(*ast.Identifier)
+	if !ok {
+		return p.syntaxError(fmt.Sprintf("cannot parse map key, expect identifier got= %s(%T)",
+			expr.Left.Stringify(), expr.Left))
+	}
+	m[key.Value] = expr.Right
+	return nil
 }
