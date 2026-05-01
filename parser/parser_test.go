@@ -69,7 +69,7 @@ func TestIndexing(t *testing.T) {
 }
 
 func TestArrayLieral(t *testing.T) {
-	source := `let x = [1,2,3];`
+	source := `let x = [1,2,3, a];`
 	tokens := lexer.New(source)
 	p := New(tokens)
 	program, err := p.ParseProgram()
@@ -84,7 +84,7 @@ func TestArrayLieral(t *testing.T) {
 	if !ok {
 		t.Errorf("expect let stmt.Value to ast.ArrayLiteral, got=%T", stmt.Value)
 	}
-	testNumberOfStatments(t, len(expr.Elements), 3)
+	testNumberOfStatments(t, len(expr.Elements), 4)
 	num, ok := expr.Elements[0].(*ast.NumberLiteral)
 	if !ok {
 		t.Errorf("expect expr.Elements[0] to be NumberLiteral, got=%T", expr.Elements[0])
@@ -354,4 +354,3 @@ func testNumberOfStatments(t *testing.T, got, expected int) {
 		t.Errorf("expect program.Statements to be %d, got=%d", expected, got)
 	}
 }
-

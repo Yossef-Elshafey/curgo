@@ -349,3 +349,40 @@ func TestDivisionByZero(t *testing.T) {
 		t.Errorf("error message donest include 'division by zero'")
 	}
 }
+
+func TestArrayLiteral(t *testing.T) {
+	source := `
+	let y = 4;
+	let x = [1 + 2, y, 5];
+	x
+	`
+	tokens := lexer.New(source)
+	p := parser.New(tokens)
+	program, _ := p.ParseProgram()
+	env := object.NewEnvironment()
+	e := Eval(program, env)
+	arr, ok := e.(*object.Array)
+	if !ok {
+		t.Errorf("expect object.Array, got= %T", e)
+	}
+	if len(arr.Elements) != 3 {
+		t.Errorf("expect 3 elements in array, got=%d", len(arr.Elements))
+	}
+	v := arr.Elements[1]
+	vInt, ok := v.(*object.Integer)
+	if !ok {
+		t.Errorf("expect Elements[2] to be integer, got= %T", v)
+	}
+	if vInt.Value != 4 {
+		t.Errorf("expect elements[2] to be 4, got= %d", v)
+	}
+
+	v = arr.Elements[0]
+	vInt, ok = v.(*object.Integer)
+	if !ok {
+		t.Errorf("expect Elements[0] to be integer, got= %T", v)
+	}
+	if vInt.Value != 3 {
+		t.Errorf("expect elements[0] to be 3, got= %d", v)
+	}
+}

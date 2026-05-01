@@ -20,6 +20,7 @@ const (
 	RESPONSE      =  "RESPONSE"
 	BUILTIN       =  "BUILTIN"
 	BOOLEAN       =  "BOOLEAN"
+	ARRAY         =  "ARRAY"
 	NULL          =  "NULL"
 )
 
@@ -104,3 +105,10 @@ type Null struct {}
 
 func (n *Null) Type() ObjectType { return NULL }
 func (n *Null) Visit() string { return fmt.Sprintf("%s", "Null")}
+
+type Array struct {
+	Elements []Object
+}
+
+func (a *Array) Type() ObjectType { return ARRAY }
+func (a *Array) Visit() string { return fmt.Sprintf("%+v", a.Elements )}

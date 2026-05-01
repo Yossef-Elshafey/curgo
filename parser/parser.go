@@ -192,10 +192,11 @@ func (p *Parser) parseStmt() ( ast.Statement, error ) {
 }
 
 func (p *Parser) parseLetStmt() ( *ast.LetStatement, error ) {
+	ls := &ast.LetStatement{}
+	ls.Token = p.currentToken
 	if !p.expectPeekToBe(token.IDENTIFIER) {
 		return nil, p.syntaxError("expect identifier after let")
 	}
-	ls := &ast.LetStatement{}
 	ls.Identifier = &ast.Identifier{Token: p.currentToken, Value: p.currentToken.Value}
 	if !p.expectPeekToBe(token.ASSIGN) {
 		return nil, p.syntaxError("expect '=' after let identifier") 
@@ -399,7 +400,10 @@ func (p *Parser) parseGroupedExpression() ( ast.Expression, error ) {
 }
 
 func (p *Parser) parseSuffixExpression(left ast.Expression) (ast.Expression, error) {
-	ma := &ast.SuffixExpression{Left: left, Operator: p.currentToken.Value}
+	ma := &ast.SuffixExpression{
+		Token: p.currentToken,
+		Left: left,
+		Operator: p.currentToken.Value}
 	p.advanceTokens()
 	ma.Member = &ast.Identifier{Token: p.currentToken, Value: p.currentToken.Value}
 	return ma, nil
@@ -513,8 +517,6 @@ func (p *Parser) parseMapLiteral() ( ast.Expression, error ) {
 			return nil, p.syntaxError(err.Error())
 		}
 	}
-	fmt.Printf("%+v\n", ml.Elements["y"])
-	p.debugToken()
 	if !p.expectPeekToBe(token.RBRACE) {
 		return nil, p.syntaxError(fmt.Sprintf("Expect '{' after map, got= %s", p.peekToken.Value))
 	}

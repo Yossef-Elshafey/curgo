@@ -46,7 +46,7 @@ func Eval(node ast.Node, env *object.Env) object.Object {
 		if isError(v) {
 			return v
 		}
-		env.Set(node.Identifier.Token.Value, v)
+		env.Set(node.Identifier.Value, v)
 
 	case *ast.BinaryExpression:
 		left := Eval(node.Left, env)
@@ -94,8 +94,29 @@ func Eval(node ast.Node, env *object.Env) object.Object {
 		return cc
 	case *ast.IfStmt: return evalIf(node, env)
 	case *ast.BlockStatement: return evalBlockStmt(node, env)
+	case *ast.Indexing: return evalIndexing(node, env) 
+	case *ast.ArrayLiteral: 
+		elements := evalExpressions(node.Elements, env)
+		if len(elements) == 1 && isError(elements[0]) {
+			return elements[0]
+		}
+		return &object.Array{Elements: elements}
+	case *ast.MapLiteral: // TODO:
 	}
 	return nil
+}
+
+func evalProgram(n *ast.Program, env *object.Env) object.Object {
+	var result object.Object
+	for _, stmt := range n.Statements {
+		result = Eval(stmt, env)
+
+		switch result := result.(type) {
+		case *object.Error:
+			return result
+		}
+	}
+	return result
 }
 
 func evalBlockStmt(n *ast.BlockStatement, env *object.Env) object.Object {
@@ -112,18 +133,6 @@ func evalBlockStmt(n *ast.BlockStatement, env *object.Env) object.Object {
 	return result
 }
 
-func evalProgram(n *ast.Program, env *object.Env) object.Object {
-	var result object.Object
-	for _, stmt := range n.Statements {
-		result = Eval(stmt, env)
-
-		switch result := result.(type) {
-		case *object.Error:
-			return result
-		}
-	}
-	return result
-}
 
 func evalInfixExpression(
 	operator string,
@@ -323,4 +332,21 @@ func evalIf(node *ast.IfStmt, env *object.Env) object.Object {
 		return e
 	}
 	return nil
+}
+
+func evalIndexing(node *ast.Indexing, env *object.Env) object.Object {
+	lhs := node.Ident
+	v, ok := env.Get(lhs.Stringify())
+	if !ok {
+		return newError("Evaluator(%d): unknown identifier of %s", node.Token.Line, lhs.Stringify())
+	}
+	t := Eval(node.Target, env)
+	// TODO: target should be a string for maps, int for arrays
+	if isError(t) {
+		return newError("Evaluator(%d): unknown indexing at '%s'", node.Token.Line, node.Token.Value)
+	}
+	// TODO: currently since the test is num
+	arr, _ := v.(*object.Array)
+	idx, _ := t.(*object.Integer)
+	return arr.Elements[idx.Value]
 }

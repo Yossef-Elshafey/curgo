@@ -7,6 +7,7 @@ import (
 )
 
 type Node interface {
+	GetLine() int
 	Stringify() string
 }
 
@@ -28,6 +29,10 @@ func (p *Program) Stringify() string {
 	return "Program"
 }
 
+func (p *Program) GetLine() int {
+	return -1
+}
+
 type Identifier struct {
 	Token token.Token
 	Value  string
@@ -39,6 +44,7 @@ func (i *Identifier) Stringify() string {
 	out.WriteString(i.Token.Value)
 	return out.String()
 }
+func (i *Identifier) GetLine() int { return i.Token.Line }
 
 type FetchStmt struct {
 	Token token.Token
@@ -57,6 +63,8 @@ func (fs *FetchStmt) Stringify() string {
 	return out.String()
 }
 
+func (fs *FetchStmt) GetLine() int { return fs.Token.Line }
+
 type StringLiteral struct {
 	Token token.Token
 	Value string
@@ -69,6 +77,7 @@ func (sl *StringLiteral) Stringify() string {
 }
 
 func (sl *StringLiteral) iExpr() {}
+func (sl *StringLiteral) GetLine() int {return sl.Token.Line}
 
 type CurgoAssignStatment struct {
 	Token token.Token
@@ -84,6 +93,8 @@ func (ca *CurgoAssignStatment) Stringify() string {
 	out.WriteString(ca.Value.Stringify())
 	return out.String()
 }
+
+func (ca *CurgoAssignStatment) GetLine() int {return ca.Token.Line}
 
 type BinaryExpression struct {
 	Token token.Token
@@ -101,7 +112,10 @@ func (br *BinaryExpression) Stringify() string {
 	return out.String()
 }
 
+func (br *BinaryExpression) GetLine() int {return br.Token.Line}
+
 type LetStatement struct {
+	Token token.Token
 	Identifier *Identifier
 	Value Expression
 }
@@ -116,11 +130,14 @@ func (ls *LetStatement) Stringify() string {
 	return out.String()
 }
 
+func (ls *LetStatement) GetLine() int {return ls.Token.Line}
+
 type ExpressionStatement struct {
 	Token token.Token
 	Expression Expression
 }
 
+func (es *ExpressionStatement) GetLine() int {return es.Token.Line}
 func (es *ExpressionStatement) iStmt() {}
 func (es *ExpressionStatement) Stringify() string {
 	var out bytes.Buffer
@@ -134,6 +151,7 @@ type CallExpression struct {
 	Arguments []Expression
 }
 
+func (ce *CallExpression) GetLine() int {return ce.Token.Line}
 func (ce *CallExpression) iExpr() {}
 func (ce *CallExpression) Stringify() string {
 	var out bytes.Buffer
@@ -151,6 +169,7 @@ type NumberLiteral struct {
 	Value int64
 }
 
+func (nl *NumberLiteral) GetLine() int {return nl.Token.Line}
 func (nl *NumberLiteral) iExpr() {}
 func (nl *NumberLiteral) Stringify() string {
 	var out bytes.Buffer
@@ -160,11 +179,13 @@ func (nl *NumberLiteral) Stringify() string {
 }
 
 type SuffixExpression struct {
+	Token token.Token
 	Left Expression
 	Operator string
 	Member *Identifier
 }
 
+func (se *SuffixExpression) GetLine() int {return se.Token.Line}
 func (se *SuffixExpression) iExpr() {}
 func (se *SuffixExpression) Stringify() string {
 	var out bytes.Buffer
@@ -179,7 +200,6 @@ type BlockStatement struct {
 	Statements []Statement
 }
 
-func (bs *BlockStatement) iStmt()       {}
 func (bs *BlockStatement) Stringify() string {
 	var out bytes.Buffer
 
@@ -189,6 +209,8 @@ func (bs *BlockStatement) Stringify() string {
 
 	return out.String()
 }
+func (bs *BlockStatement) GetLine() int {return bs.Token.Line}
+func (bs *BlockStatement) iStmt()       {}
 
 type IfStmt struct {
 	Token         token.Token
@@ -197,6 +219,7 @@ type IfStmt struct {
 	Alternative   *BlockStatement
 }
 
+func (is *IfStmt) GetLine() int {return is.Token.Line}
 func (is *IfStmt) iStmt() {}
 func (is *IfStmt) Stringify() string {
 	var out bytes.Buffer
@@ -211,6 +234,7 @@ type Indexing struct {
 	Target  Expression
 }
 
+func (i *Indexing) GetLine() int {return i.Token.Line}
 func (i *Indexing) iExpr() {}
 func (i *Indexing) Stringify() string {
 	var out bytes.Buffer
@@ -225,6 +249,7 @@ type ArrayLiteral struct {
 	Elements []Expression
 }
 
+func (al *ArrayLiteral) GetLine() int {return al.Token.Line}
 func (al *ArrayLiteral) iExpr() {}
 func (al *ArrayLiteral) Stringify() string {
 	var out bytes.Buffer
@@ -240,6 +265,7 @@ type MapLiteral struct {
 	Elements map[string]Expression
 }
 
+func (ml *MapLiteral) GetLine() int {return ml.Token.Line}
 func (ml *MapLiteral) iExpr() {}
 func (ml *MapLiteral) Stringify() string {
 	var out bytes.Buffer
