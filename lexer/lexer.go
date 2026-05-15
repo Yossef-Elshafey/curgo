@@ -56,7 +56,7 @@ func (l *Lexer) NextToken() token.Token {
 		if l.peekChar() == '/' {
 			l.readChar()
 			l.readChar()
-			for l.ch != '\n' && l.ch != 0 {
+			for l.ch != '\n' && l.ch != '\r' && l.ch != 0 {
 				l.readChar()
 			}
 			return l.NextToken()
@@ -127,16 +127,16 @@ func (l *Lexer) skipWhitespace() {
 }
 
 func (l *Lexer) readChar() {
+	if l.ch == '\n' || l.ch == '\r' && l.peekChar() != '\n' {
+		l.line++
+	}
 	if l.readPosition >= len(l.input) {
 		l.ch = 0
 	} else {
 		l.ch = l.input[l.readPosition]
 	}
-	if l.ch == '\n' {
-		l.line += 1
-	}
 	l.position = l.readPosition
-	l.readPosition += 1
+	l.readPosition++
 }
 
 func (l *Lexer) readIdentifier() string {
@@ -179,9 +179,6 @@ func (l *Lexer) readString(stop byte) string {
 	position := l.position + 1
 	for {
 		l.readChar()
-		if l.ch == stop || l.ch == 0 {
-			break
-		}
 		if l.ch == stop || l.ch == 0 {
 			break
 		}
