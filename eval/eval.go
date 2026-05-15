@@ -101,7 +101,15 @@ func Eval(node ast.Node, env *object.Env) object.Object {
 			return elements[0]
 		}
 		return &object.Array{Elements: elements}
-	case *ast.MapLiteral: // TODO:
+	case *ast.MapLiteral: 
+		return evalMap(node, env)
+
+	case *ast.PrefixExpression:
+		right := Eval(node.Right, env)
+		if isError(right) {
+			return right
+		}
+		return evalPrefixExpression(node.Operator, right)
 	}
 	return nil
 }
@@ -341,12 +349,61 @@ func evalIndexing(node *ast.Indexing, env *object.Env) object.Object {
 		return newError("Evaluator(%d): unknown identifier of %s", node.Token.Line, lhs.Stringify())
 	}
 	t := Eval(node.Target, env)
-	// TODO: target should be a string for maps, int for arrays
 	if isError(t) {
 		return newError("Evaluator(%d): unknown indexing at '%s'", node.Token.Line, node.Token.Value)
 	}
-	// TODO: currently since the test is num
-	arr, _ := v.(*object.Array)
-	idx, _ := t.(*object.Integer)
-	return arr.Elements[idx.Value]
+
+	if t.Type() == object.STRING_OBJ && v.Type() == object.MAP {
+		m, _ := v.(*object.Map)
+		member, _ := t.(*object.String)
+		ret, ok := m.Elements[member.Value]
+		if !ok {
+			return newError("Evaluator(%d): value of %s is not founded", node.GetLine(), t.Visit())
+		}
+		return ret
+	} else if t.Type() == object.INTEGER_OBJ && v.Type() == object.ARRAY {
+		arr, _ := v.(*object.Array)
+		member, _ := t.(*object.Integer)
+		if int(member.Value) > len(arr.Elements) - 1 {
+			return newError("Evaluator(%d): value of index %s is not founded", node.GetLine(), t.Visit())
+		}
+		if member.Value < 0 {
+			return newError("Evaluator(%d): negative index values in not allowed '%s'", node.GetLine(), t.Visit())
+		}
+		return arr.Elements[member.Value]
+	}
+	return newError("Evaluator(%d): cannot access object<%s> with %v", node.GetLine(), t.Type(), node.Target.Stringify())
+}
+
+func evalMap(node *ast.MapLiteral, env *object.Env) object.Object {
+	mapObj := &object.Map{}
+	mapObj.Elements = map[string]object.Object{}
+	for k, v := range node.Elements {
+		e := Eval(v, env)
+		if isError(e) {
+			return newError("Evaluator(%d): %s", node.Token.Line, e.Visit())
+		}
+		mapObj.Elements[k] = e
+	}
+	return mapObj
+}
+
+func evalPrefixExpression(operator string, right object.Object) object.Object {
+	switch operator {
+	// case "!":
+		// return evalBangOperatorExpression(right) // TODO:
+	case "-":
+		return evalMinusPrefixOperatorExpression(right)
+	default:
+		return newError("unknown operator: %s%s", operator, right.Type())
+	}
+}
+
+func evalMinusPrefixOperatorExpression(right object.Object) object.Object {
+	if right.Type() != object.INTEGER_OBJ {
+		return newError("unknown operator: -%s", right.Type())
+	}
+
+	value := right.(*object.Integer).Value
+	return &object.Integer{Value: -value}
 }

@@ -4,6 +4,7 @@ import (
 	"curgo/lexer"
 	"curgo/parser"
 	"curgo/types/object"
+	"fmt"
 	"strings"
 	"testing"
 )
@@ -25,8 +26,8 @@ func TestSingleObjectIfCond(t *testing.T) {
 }
 
 func TestIfCondition(t *testing.T) {
-	sources := []struct{
-		input string
+	sources := []struct {
+		input    string
 		expected int
 	}{
 		{`if (1 + 2) == 3 {let x = 1; x}`, 1},
@@ -47,7 +48,7 @@ func TestIfCondition(t *testing.T) {
 			let x = 100;
 			if ("hello" + " " + "yossef") != "hello yossef" { x } else {200}
 			`, 200},
-		}
+	}
 	for _, source := range sources {
 		tokens := lexer.New(source.input)
 		p := parser.New(tokens)
@@ -145,8 +146,8 @@ func TestIncorrectStringConcat(t *testing.T) {
 }
 
 func TestArthmeticOps(t *testing.T) {
-	source := []struct{
-		input string
+	source := []struct {
+		input    string
 		expected int
 	}{
 		{"2 - 2 + 1 * 10 / 2 - 2", 3},
@@ -165,7 +166,7 @@ func TestArthmeticOps(t *testing.T) {
 			t.Errorf("expect object.Integer, got=%T", eval)
 		}
 		if i.Value != int64(s.expected) {
-			t.Errorf("expect %d, got= %d",s.expected, i.Value)
+			t.Errorf("expect %d, got= %d", s.expected, i.Value)
 		}
 	}
 }
@@ -384,5 +385,66 @@ func TestArrayLiteral(t *testing.T) {
 	}
 	if vInt.Value != 3 {
 		t.Errorf("expect elements[0] to be 3, got= %d", v)
+	}
+}
+
+func TestMapLiteral(t *testing.T) {
+	source := `
+	let cord = {x:2, y:4};
+	cord["x"]
+	`
+	tokens := lexer.New(source)
+	p := parser.New(tokens)
+	program, _ := p.ParseProgram()
+	env := object.NewEnvironment()
+	e := Eval(program, env)
+	ret, ok := e.(*object.Integer)
+	if !ok {
+		t.Errorf("expect return to be object.Integer, got=%T", e)
+	}
+	if ret.Value != 2 {
+		t.Errorf("expect return to be 3, got=%d", ret.Value)
+	}
+}
+
+func TestIndexing(t *testing.T) {
+	source := `
+	let x = [1 + 2, 5];
+	x[1]
+	`
+	tokens := lexer.New(source)
+	p := parser.New(tokens)
+	program, _ := p.ParseProgram()
+	env := object.NewEnvironment()
+	e := Eval(program, env)
+	fmt.Printf("%+v\n", e)
+	ret, ok := e.(*object.Integer)
+	if !ok {
+		t.Errorf("expect return to be object.Integer, got=%T", e)
+	}
+	if ret.Value != 5 {
+		t.Errorf("expect return to be 3, got=%d", ret.Value)
+	}
+}
+
+func TestInvalidIndexing(t *testing.T) {
+	sources := []struct{
+		input string
+	}{
+		{ "let x = [1 + 2, 5]; x[2]" },
+		{ "let x = [1 + 2, 5]; x[-1]" },
+		{ `let x = {x:50, y:100}; x["x"] + x["y"] + x["z"]` },
+	}
+	for _, source := range sources {
+		tokens := lexer.New(source.input)
+		p := parser.New(tokens)
+		program, _ := p.ParseProgram()
+		env := object.NewEnvironment()
+		e := Eval(program, env)
+		ret, ok := e.(*object.Error)
+		if !ok {
+			t.Errorf("expect return to be object.Error, got=%T", e)
+		}
+		fmt.Printf("%+v\n", ret)
 	}
 }

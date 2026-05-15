@@ -28,6 +28,7 @@ const (
 	LESSGREATER // > or <
 	SUM
 	PRODUCT
+	PREFIX      // -X or TODO -> !x
 	CALL // (
 	DOT
 	INDEX
@@ -36,11 +37,11 @@ const (
 
 var bindingPowerLookup = map[string]bindingPower{
 	"+":   SUM,
+	"-":   SUM,
 	"==":  EQUALS,
 	"!=":  EQUALS,
 	"<":   LESSGREATER,
 	">":   LESSGREATER,
-	"-":   SUM,
 	"*":   PRODUCT,
 	"/":   PRODUCT,
 	"(":   CALL,
@@ -87,6 +88,7 @@ func (p *Parser) initPrefix() {
 	p.registerPrefix(token.LPAREN,      p.parseGroupedExpression)
 	p.registerPrefix(token.LBRACKET,    p.parseArrayLiteral)
 	p.registerPrefix(token.LBRACE,      p.parseMapLiteral)
+	p.registerPrefix(token.MINUS,       p.parsePrefixExpression)
 }
 
 func (p *Parser) initInfix() {
@@ -347,7 +349,7 @@ func (p *Parser) parseCallExpression(fs ast.Expression) ( ast.Expression, error 
 	return ce, nil
 }
 
-/* ex. Ltoken exp1, expr2, ..., exprn Rtoken(stopAt), caller has to consume Ltoken */
+/* ex. Ltoken [ exp1, expr2, exprn ] Rtoken(stopAt), caller has to consume Ltoken */
 func (p *Parser) parseExpressionElements(stopAt token.TokenKind) ( []ast.Expression, error ) {
 	args := []ast.Expression{}
 	if p.peekTokenIs(stopAt) {
@@ -539,4 +541,20 @@ func (p *Parser) parseMapValues(m map[string]ast.Expression) error {
 	}
 	m[key.Value] = expr.Right
 	return nil
+}
+
+func (p *Parser) parsePrefixExpression() ( ast.Expression, error ) {
+	expression := &ast.PrefixExpression{
+		Token:    p.currentToken,
+		Operator: p.currentToken.Value,
+	}
+
+	p.advanceTokens()
+
+	exp, err := p.parseExpression(PREFIX)
+	if err != nil {
+		return nil, p.syntaxError(err.Error())
+	}
+	expression.Right = exp
+	return expression, nil
 }

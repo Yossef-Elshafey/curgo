@@ -21,6 +21,7 @@ const (
 	BUILTIN       =  "BUILTIN"
 	BOOLEAN       =  "BOOLEAN"
 	ARRAY         =  "ARRAY"
+	MAP           =  "MAP"
 	NULL          =  "NULL"
 )
 
@@ -112,3 +113,10 @@ type Array struct {
 
 func (a *Array) Type() ObjectType { return ARRAY }
 func (a *Array) Visit() string { return fmt.Sprintf("%+v", a.Elements )}
+
+type Map struct {
+	Elements map[string]Object
+}
+
+func (m *Map) Type() ObjectType { return MAP }
+func (m *Map) Visit() string { return fmt.Sprintf("%+v", m.Elements )}

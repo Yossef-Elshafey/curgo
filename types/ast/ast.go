@@ -275,3 +275,22 @@ func (ml *MapLiteral) Stringify() string {
 	}
 	return out.String()
 }
+
+type PrefixExpression struct {
+	Token    token.Token
+	Operator string
+	Right    Expression
+}
+
+func (pe *PrefixExpression) iExpr()      {}
+func (pe *PrefixExpression) Stringify() string {
+	var out bytes.Buffer
+
+	out.WriteString("(")
+	out.WriteString(pe.Operator)
+	out.WriteString(pe.Right.Stringify())
+	out.WriteString(")")
+
+	return out.String()
+}
+func (pe *PrefixExpression) GetLine() int {return pe.Token.Line}
