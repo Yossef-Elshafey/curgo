@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 
@@ -23,6 +24,7 @@ const (
 	ARRAY         =  "ARRAY"
 	MAP           =  "MAP"
 	NULL          =  "NULL"
+	WRAP          =  "WRAP"
 )
 
 type Object interface { 
@@ -112,7 +114,13 @@ type Array struct {
 }
 
 func (a *Array) Type() ObjectType { return ARRAY }
-func (a *Array) Visit() string { return fmt.Sprintf("%+v", a.Elements )}
+func (a *Array) Visit() string {
+    var out []string
+    for _, el := range a.Elements {
+        out = append(out, el.Visit())
+    }
+    return "[" + strings.Join(out, ", ") + "]"
+}
 
 type Map struct {
 	Elements map[string]Object
@@ -120,3 +128,11 @@ type Map struct {
 
 func (m *Map) Type() ObjectType { return MAP }
 func (m *Map) Visit() string { return fmt.Sprintf("%+v", m.Elements )}
+
+type Wrap struct {
+	Value Object
+}
+
+func (w *Wrap) Type() ObjectType { return WRAP }
+func (w *Wrap) Visit() string { return fmt.Sprintf("%s", "<Wrapper>" )}
+func (w *Wrap) UnWrap() Object { return w.Value }

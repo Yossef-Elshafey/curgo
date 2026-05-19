@@ -2,8 +2,7 @@ package eval
 
 import "curgo/types/object"
 
-// TODO: create a map for each object contains member mapped to its execution method
-func evalStringMembers(left *object.String, member string) object.Object {
+func stringInterface(left *object.String, member string) object.Object {
 	switch member {
 	case "length":
 		return &object.Integer{Value: int64(len(left.Value))}
@@ -12,7 +11,7 @@ func evalStringMembers(left *object.String, member string) object.Object {
 	}
 }
 
-func evalResponseMembers(left *object.Response, member string) object.Object {
+func responseInterface(left *object.Response, member string) object.Object {
 	switch member {
 	case "status":
 		return &object.Integer{Value: int64(left.Res.StatusCode)}
