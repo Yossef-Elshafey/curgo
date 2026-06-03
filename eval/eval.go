@@ -174,7 +174,7 @@ func nativeBooleanObject(inp bool) object.Object {
 func evalMemberAccessExpr(left object.Object, member string) object.Object {
 	switch left := left.(type) {
 	case *object.String:
-		return evalStringMembers(left,member)
+		return stringInterface(left,member)
 	case *object.Integer:
 		switch member {
 			case "plusone": // javascript lib until creating a function for integer
@@ -182,7 +182,7 @@ func evalMemberAccessExpr(left object.Object, member string) object.Object {
 				return left
 		}
 	case *object.Response:
-		return evalResponseMembers(left,member)
+		return responseInterface(left,member)
 	}
 	return newError("%s doesnt support current option '%s'", left.Type(), member)
 }
@@ -354,6 +354,7 @@ func evalIndexing(node *ast.Indexing, env *object.Env) object.Object {
 	}
 
 	if t.Type() == object.STRING_OBJ && v.Type() == object.MAP {
+		// TODO: add ok check on object.type casting, replace the if with switch on v.type to make datatypes with indexing more clear
 		m, _ := v.(*object.Map)
 		member, _ := t.(*object.String)
 		ret, ok := m.Elements[member.Value]
