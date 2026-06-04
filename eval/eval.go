@@ -127,7 +127,6 @@ func evalProgram(n *ast.Program, env *object.Env) object.Object {
 }
 
 func evalBlockStmt(n *ast.BlockStatement, env *object.Env) object.Object {
-	// NOTE: to be used in the future for return stmts ex. for, if, functions
 	var result object.Object
 	for _, stmt := range n.Statements {
 		result = Eval(stmt, env)

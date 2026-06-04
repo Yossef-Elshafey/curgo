@@ -6,6 +6,7 @@ import (
 )
 
 
+// TODO: attach expectArgsCount(), markAsProperty(), etc to object.Builtin
 func expectArgsCount(valid bool) object.Object {
 	if !valid {
 		return newError("invalid number of arguments")
@@ -46,16 +47,12 @@ func responseInterface(left *object.Response, rhsOpts ast.RightOpts) object.Obje
 	case "statusText":
 		return &object.String{Value: left.Res.Status}
 	case "cookies":
-		// TODO:
 		return newError("object %s doesn't support operation %s", left.Type(), rhsOpts.Member.Value)
 	case "location":
-		// TODO:
 		return newError("object %s doesn't support operation %s", left.Type(), rhsOpts.Member.Value)
 	case "header":
-		// TODO:
 		return newError("object %s doesn't support operation %s", left.Type(), rhsOpts.Member.Value)
 	case "body":
-		// TODO:
 		return newError("object %s doesn't support operation %s", left.Type(), rhsOpts.Member.Value)
 	default:
 		return newError("object %s doesn't support operation %s", left.Type(), rhsOpts.Member.Value)

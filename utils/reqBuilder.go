@@ -68,7 +68,6 @@ func (b *ReqBuilder) BuildRequest(k,v string) error {
 			if len(header) < 2 {
 				return fmt.Errorf("missing ':' between header key, value: %s", v)
 			}
-			// TODO: header is not splitable at : error
 			b.req.Header.Add(header[0], header[1])
 		case HOST:
 			u, err := url.Parse(v)
