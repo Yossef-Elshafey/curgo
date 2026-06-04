@@ -1,35 +1,63 @@
 package eval
 
-import "curgo/types/object"
+import (
+	"curgo/types/ast"
+	"curgo/types/object"
+)
 
-func stringInterface(left *object.String, member string) object.Object {
-	switch member {
+
+func expectArgsCount(valid bool) object.Object {
+	if !valid {
+		return newError("invalid number of arguments")
+	}
+	return nil
+}
+
+func stringInterface(left *object.String, rhsOpts ast.RightOpts) object.Object {
+	switch rhsOpts.Member.Value {
 	case "length":
+		if rhsOpts.Callable {
+			return newError("length is not callable")
+		}
 		return &object.Integer{Value: int64(len(left.Value))}
-	default: 
-		return newError("object %s donest support operation %s", left.Type(), member)
+	case "charIndex":
+		fnObj := &object.Builtin{}
+		fnObj.Fn = func(args ...object.Object) object.Object {
+			err := expectArgsCount(len(args) == 1)
+			if isError(err) {
+				return newError("%s for %s", err.Visit(), rhsOpts.Member.Value)
+			}
+			idx, ok := args[0].(*object.Integer)
+			if !ok {
+				return newError("invalid argument type for %s expect number, got=%s", rhsOpts.Member.Value, args[0].Type())
+			}
+			return &object.String{Value: string(left.Value[idx.Value])}
+		}
+		return fnObj
+	default:
+		return newError("object %s donest support operation %s", left.Type(), rhsOpts.Member.Value)
 	}
 }
 
-func responseInterface(left *object.Response, member string) object.Object {
-	switch member {
+func responseInterface(left *object.Response, rhsOpts ast.RightOpts) object.Object {
+	switch rhsOpts.Member.Value {
 	case "status":
 		return &object.Integer{Value: int64(left.Res.StatusCode)}
 	case "statusText":
 		return &object.String{Value: left.Res.Status}
 	case "cookies":
 		// TODO:
-		return newError("object %s doesn't support operation %s", left.Type(), member)
+		return newError("object %s doesn't support operation %s", left.Type(), rhsOpts.Member.Value)
 	case "location":
 		// TODO:
-		return newError("object %s doesn't support operation %s", left.Type(), member)
+		return newError("object %s doesn't support operation %s", left.Type(), rhsOpts.Member.Value)
 	case "header":
 		// TODO:
-		return newError("object %s doesn't support operation %s", left.Type(), member)
+		return newError("object %s doesn't support operation %s", left.Type(), rhsOpts.Member.Value)
 	case "body":
 		// TODO:
-		return newError("object %s doesn't support operation %s", left.Type(), member)
-	default: 
-		return newError("object %s doesn't support operation %s", left.Type(), member)
+		return newError("object %s doesn't support operation %s", left.Type(), rhsOpts.Member.Value)
+	default:
+		return newError("object %s doesn't support operation %s", left.Type(), rhsOpts.Member.Value)
 	}
 }

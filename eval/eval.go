@@ -68,10 +68,9 @@ func Eval(node ast.Node, env *object.Env) object.Object {
 		if isError(left) {
 			return left
 		}
-		member := node.Member.Value
-		e := evalMemberAccessExpr(left, member)
+		e := evalMemberAccessExpr(left, node.Right)
 		if isError(e) {
-			return newError("Evaluator(%d): %s", node.Member.Token.Line, e.Visit())
+			return newError("Evaluator(%d): %s", node.Right.Member.Token.Line, e.Visit())
 		}
 		return e
 	case *ast.ExpressionStatement: return Eval(node.Expression, env)
@@ -171,20 +170,20 @@ func nativeBooleanObject(inp bool) object.Object {
 	return CUR_FALSE
 }
 
-func evalMemberAccessExpr(left object.Object, member string) object.Object {
+func evalMemberAccessExpr(left object.Object, rhsOpts ast.RightOpts) object.Object {
 	switch left := left.(type) {
 	case *object.String:
-		return stringInterface(left,member)
+		return stringInterface(left,rhsOpts)
 	case *object.Integer:
-		switch member {
+		switch rhsOpts.Member.Value {
 			case "plusone": // javascript lib until creating a function for integer
 				left.Value = left.Value + 1
 				return left
 		}
 	case *object.Response:
-		return responseInterface(left,member)
+		return responseInterface(left,rhsOpts)
 	}
-	return newError("%s doesnt support current option '%s'", left.Type(), member)
+	return newError("%s doesnt support current option '%s'", left.Type(), rhsOpts)
 }
 
 func evalStringInfixExpression(

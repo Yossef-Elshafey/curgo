@@ -80,12 +80,7 @@ type Response struct {
 
 func (r *Response) Type() ObjectType { return RESPONSE}
 func (r *Response) Visit() string {
-	if r.Opts == nil {
-		r.Opts = make(map[string]bool)
-	}
-	r.Opts["status"] = true
-	r.Opts["statusText"] = true
-	return fmt.Sprintf("%+v", r.Opts)
+	return fmt.Sprintf("%+v", r.Res)
 }
 
 type BuiltinFunction func(args ...Object) Object
