@@ -178,11 +178,16 @@ func (nl *NumberLiteral) Stringify() string {
 	return out.String()
 }
 
+type RightOpts struct {
+	Member *Identifier
+	Callable bool
+}
+
 type SuffixExpression struct {
 	Token token.Token
 	Left Expression
 	Operator string
-	Member *Identifier
+	Right RightOpts
 }
 
 func (se *SuffixExpression) GetLine() int {return se.Token.Line}
@@ -191,7 +196,7 @@ func (se *SuffixExpression) Stringify() string {
 	var out bytes.Buffer
 	out.WriteString(se.Left.Stringify())
 	out.WriteString(se.Operator)
-	out.WriteString(se.Member.Stringify())
+	out.WriteString(se.Right.Member.Stringify())
 	return out.String()
 }
 

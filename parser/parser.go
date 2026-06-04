@@ -405,9 +405,13 @@ func (p *Parser) parseSuffixExpression(left ast.Expression) (ast.Expression, err
 	ma := &ast.SuffixExpression{
 		Token: p.currentToken,
 		Left: left,
-		Operator: p.currentToken.Value}
+		Operator: p.currentToken.Value,
+	}
 	p.advanceTokens()
-	ma.Member = &ast.Identifier{Token: p.currentToken, Value: p.currentToken.Value}
+	ma.Right.Member = &ast.Identifier{Token: p.currentToken, Value: p.currentToken.Value}
+	if p.peekTokenIs(token.LPAREN) {
+		ma.Right.Callable = true
+	}
 	return ma, nil
 }
 
