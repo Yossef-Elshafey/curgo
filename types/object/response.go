@@ -13,15 +13,6 @@ type Response struct {
 	}
 }
 
-type Expect struct {
-	Value Object
-	ToBe  ToBe
-}
-
-type ToBe struct {
-	Value Object
-}
-
 func (r *Response) Type() ObjectType { return RESPONSE }
 func (r *Response) Visit() string {
 	return fmt.Sprintf("%+v", r.Res)

@@ -173,6 +173,8 @@ func evalMemberAccessExpr(left object.Object, rhsOpts ast.RightOpts) object.Obje
 	switch left := left.(type) {
 	case *object.String:
 		return stringInterface(left,rhsOpts)
+	case *object.ExpectContext:
+		return expectContextInterface(left,rhsOpts)
 	case *object.Integer:
 		switch rhsOpts.Member.Value {
 			case "plusone": // javascript lib until creating a function for integer
@@ -255,8 +257,7 @@ func evalFetchFunction(fn *object.FetchFunction, args []object.Object) object.Ob
 		}
 		strObj, ok := cp.Value.(*object.String)
 		if !ok { return newError("curgo request value is not string %s", cp.Value.Visit()) }
-		cancelCtx, err := rb.BuildRequest(cp.Key, strObj.Value)
-		defer cancelCtx()
+		err := rb.BuildRequest(cp.Key, strObj.Value)
 		if err != nil { return newError(err.Error(), "") }
 	}
 	resp, err := rb.Fire()

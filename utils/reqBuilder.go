@@ -1,14 +1,12 @@
 package utils
 
 import (
-	"context"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"net/url"
 	"strings"
-	"time"
 )
 
 type ParamType int
@@ -60,32 +58,31 @@ func (b *ReqBuilder) Get(k string) ParamType {
 	return v
 }
 
-func (b *ReqBuilder) BuildRequest(k,v string) (context.CancelFunc, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5 * time.Second)
+func (b *ReqBuilder) BuildRequest(k,v string) error {
 	if b.req == nil {
-		b.req, _ = http.NewRequestWithContext(ctx, "GET","", nil)
+		b.req, _ = http.NewRequest("GET","", nil)
 	}
 	switch b.Get(k) {
 		case HEADER: 
 			header := strings.SplitN(v, ":", 2)
 			if len(header) < 2 {
-				return nil, fmt.Errorf("missing ':' between header key, value: %s", v)
+				return fmt.Errorf("missing ':' between header key, value: %s", v)
 			}
 			b.req.Header.Add(header[0], header[1])
 		case HOST:
 			u, err := url.Parse(v)
 			if err != nil {
-				return nil, fmt.Errorf("cannot parse request url: %s", err)
+				return fmt.Errorf("cannot parse request url: %s", err)
 			}
 			if u.Scheme == "" || u.Host == "" {
-				return nil, fmt.Errorf("invalid URL: missing scheme or host: %s", v)
+				return fmt.Errorf("invalid URL: missing scheme or host: %s", v)
 			}
 			b.req.URL = u
 		case METHOD: b.req.Method = v
 		case BODY: b.req.Body = io.NopCloser(strings.NewReader(v))
-		case NONE : return nil, fmt.Errorf("cant transpile %s", k)
+		case NONE : return fmt.Errorf("cant transpile %s", k)
 	}
-	return cancel, nil
+	return nil
 }
 
 func (b *ReqBuilder) normalization() {
