@@ -255,7 +255,8 @@ func evalFetchFunction(fn *object.FetchFunction, args []object.Object) object.Ob
 		}
 		strObj, ok := cp.Value.(*object.String)
 		if !ok { return newError("curgo request value is not string %s", cp.Value.Visit()) }
-		err := rb.BuildRequest(cp.Key, strObj.Value)
+		cancelCtx, err := rb.BuildRequest(cp.Key, strObj.Value)
+		defer cancelCtx()
 		if err != nil { return newError(err.Error(), "") }
 	}
 	resp, err := rb.Fire()
