@@ -1,12 +1,14 @@
 package utils
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 )
 
 type ParamType int
@@ -59,8 +61,9 @@ func (b *ReqBuilder) Get(k string) ParamType {
 }
 
 func (b *ReqBuilder) BuildRequest(k,v string) error {
+	ctx, _ := context.WithTimeout(context.Background(), 5 * time.Second)
 	if b.req == nil {
-		b.req, _ = http.NewRequest("GET", "", nil)
+		b.req, _ = http.NewRequestWithContext(ctx, "GET","", nil)
 	}
 	switch b.Get(k) {
 		case HEADER: 
