@@ -4,7 +4,6 @@ import (
 	"curgo/types/ast"
 	"curgo/types/tokens"
 	"fmt"
-	"net/http"
 	"strconv"
 	"strings"
 )
@@ -73,15 +72,6 @@ type CurgoCall struct {
 func (cc *CurgoCall) Type() ObjectType { return CALLPARAM}
 func (cc *CurgoCall) Visit() string { return fmt.Sprintf("%s -> %s", cc.Key, cc.Value )}
 
-type Response struct {
-	Res *http.Response
-	Opts map[string]bool
-}
-
-func (r *Response) Type() ObjectType { return RESPONSE}
-func (r *Response) Visit() string {
-	return fmt.Sprintf("%+v", r.Res)
-}
 
 type BuiltinFunction func(args ...Object) Object
 
