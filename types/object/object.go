@@ -23,7 +23,7 @@ const (
 	ARRAY         =  "ARRAY"
 	MAP           =  "MAP"
 	NULL          =  "NULL"
-	WRAP          =  "WRAP"
+	EXPECT        =  "EXPECT"
 )
 
 type Object interface { 
@@ -114,10 +114,23 @@ type Map struct {
 func (m *Map) Type() ObjectType { return MAP }
 func (m *Map) Visit() string { return fmt.Sprintf("%+v", m.Elements )}
 
-type Wrap struct {
+type ExpectContext struct {
 	Value Object
 }
 
-func (w *Wrap) Type() ObjectType { return WRAP }
-func (w *Wrap) Visit() string { return fmt.Sprintf("%s", "<Wrapper>" )}
-func (w *Wrap) UnWrap() Object { return w.Value }
+func (ec *ExpectContext) Type() ObjectType { return EXPECT }
+func (ec *ExpectContext) Visit() string { return fmt.Sprintf("%+v", ec.Value)}
+
+func (ec *ExpectContext) ToBe(v Object) (*ExpectContext, error) {
+	fmt.Println(strings.Repeat("-", 20))
+	fmt.Printf("Running\nexpect(%s, %s).toBe(%s, %s)\n",
+					ec.Value.Type(), ec.Value.Visit(), v.Type(), v.Visit())
+	if ec.Value.Visit() != v.Visit() {
+		return nil ,fmt.Errorf("Expect failed, got=expect(%s, %s) toBe(%s, %s)",
+					ec.Value.Type(), ec.Value.Visit(), v.Type(), v.Visit())
+	}
+	fmt.Printf("Passed\n")
+	fmt.Println(strings.Repeat("-", 20))
+	ec.Value = v
+	return ec, nil
+}
