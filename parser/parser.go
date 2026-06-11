@@ -91,6 +91,7 @@ func (p *Parser) initPrefix() {
 	p.registerPrefix(token.LBRACKET,    p.parseArrayLiteral)
 	p.registerPrefix(token.LBRACE,      p.parseMapLiteral)
 	p.registerPrefix(token.MINUS,       p.parsePrefixExpression)
+	p.registerPrefix(token.BANG,        p.parsePrefixExpression)
 }
 
 func (p *Parser) initInfix() {

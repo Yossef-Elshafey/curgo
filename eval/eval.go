@@ -108,7 +108,7 @@ func Eval(node ast.Node, env *object.Env) object.Object {
 		if isError(right) {
 			return right
 		}
-		return evalPrefixExpression(node.Operator, right)
+		return evalPrefixExpression(node, right)
 	case *ast.Boolean:
 		return nativeBooleanObject(node.Value)
 	}
@@ -391,20 +391,27 @@ func evalMap(node *ast.MapLiteral, env *object.Env) object.Object {
 	return mapObj
 }
 
-func evalPrefixExpression(operator string, right object.Object) object.Object {
-	switch operator {
-	// case "!":
-		// return evalBangOperatorExpression(right) // TODO:
+func evalPrefixExpression(node *ast.PrefixExpression, right object.Object) object.Object {
+	switch node.Operator {
+	case "!":
+		return evalBangOperatorExpression(node, right)
 	case "-":
-		return evalMinusPrefixOperatorExpression(right)
+		return evalMinusPrefixOperatorExpression(node, right)
 	default:
-		return newError("unknown operator: %s%s", operator, right.Type())
+		return newError("unknown operator: %s%s", node.Operator, right.Type())
 	}
 }
 
-func evalMinusPrefixOperatorExpression(right object.Object) object.Object {
+func evalBangOperatorExpression(node *ast.PrefixExpression, right object.Object) object.Object {
+	if right.Type() != object.BOOLEAN {
+		return newError("Evaluator(%d): cannot use ! with %s",node.GetLine(), right.Type())
+	}
+	return right
+}
+
+func evalMinusPrefixOperatorExpression(node *ast.PrefixExpression, right object.Object) object.Object {
 	if right.Type() != object.INTEGER_OBJ {
-		return newError("unknown operator: -%s", right.Type())
+		return newError("Evaluator(%d): cannot use - with %s",node.GetLine(), right.Type())
 	}
 
 	value := right.(*object.Integer).Value
