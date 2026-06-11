@@ -29,20 +29,6 @@ func stringInterface(left *object.String, rhsOpts ast.RightOpts) object.Object {
 			return err
 		}
 		return &object.Integer{Value: int64(len(left.Value))}
-	case "charIndex": // TODO: replace with indexing ex. lname[0]
-		fnObj := &object.Builtin{}
-		fnObj.Fn = func(args ...object.Object) object.Object {
-			err := expectArgsCount(len(args) == 1)
-			if isError(err) {
-				return newError("%s for %s", err.Visit(), rhsOpts.Member.Value)
-			}
-			idx, ok := args[0].(*object.Integer)
-			if !ok {
-				return newError("invalid argument type for %s expect number, got=%s", rhsOpts.Member.Value, args[0].Type())
-			}
-			return &object.String{Value: string(left.Value[idx.Value])}
-		}
-		return fnObj
 	default:
 		return newError("object %s donest support operation %s", left.Type(), rhsOpts.Member.Value)
 	}
@@ -87,10 +73,9 @@ func responseInterface(left *object.Response, rhsOpts ast.RightOpts) object.Obje
 	case "get":
 		fnObj := &object.Builtin{}
 		fnObj.Fn = func(args ...object.Object) object.Object {
-			// NOTE: isError of the code below should not return that message
 			err := expectArgsCount(len(args) == 1)
 			if isError(err) {
-				return newError("%s for %s", err.Visit(), rhsOpts.Member.Value)
+				return newError("invalid argument count for get function expect 1, got=%d", len(args))
 			}
 			key, ok := args[0].(*object.String)
 			if !ok {

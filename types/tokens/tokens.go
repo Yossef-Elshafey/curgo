@@ -2,7 +2,6 @@ package token
 
 type TokenKind string
 
-// NOTE: some tokens is not recognized by the parser yet
 const (
 	ILLEGAL          =  "ILLEGAL"
 	EOF              =  "EOF"

@@ -355,25 +355,37 @@ func evalIndexing(node *ast.Indexing, env *object.Env) object.Object {
 		return newError("Evaluator(%d): unknown indexing at '%s'", node.Token.Line, node.Token.Value)
 	}
 
-	if t.Type() == object.STRING_OBJ && v.Type() == object.MAP {
-		// TODO: add ok check on object.type casting, replace the if with switch on v.type to make datatypes with indexing more clear
-		m, _ := v.(*object.Map)
-		member, _ := t.(*object.String)
-		ret, ok := m.Elements[member.Value]
+	switch v := v.(type) {
+		case *object.Map:
+			member, ok := t.(*object.String)
+			if !ok {
+				return newError("Evaluator(%d): cannot access map with index datatype of %s", t.Type())
+			}
+			ret, ok := v.Elements[member.Value]
+			if !ok {
+				return newError("Evaluator(%d): value of %s is not founded", node.GetLine(), t.Visit())
+			}
+			return ret
+		case *object.Array:
+			member, ok := t.(*object.Integer)
+			if !ok {
+				return newError("Evaluator(%d): cannot access array with index datatype of %s", t.Type())
+			}
+			ret := v.Elements[member.Value]
+			if !ok {
+				return newError("Evaluator(%d): value of %s is not founded", node.GetLine(), t.Visit())
+			}
+			return ret
+	case *object.String:
+		member, ok := t.(*object.Integer)
+		if !ok {
+			return newError("Evaluator(%d): cannot access string with index datatype of %s", t.Type())
+		}
+		ret := v.Value[member.Value]
 		if !ok {
 			return newError("Evaluator(%d): value of %s is not founded", node.GetLine(), t.Visit())
 		}
-		return ret
-	} else if t.Type() == object.INTEGER_OBJ && v.Type() == object.ARRAY {
-		arr, _ := v.(*object.Array)
-		member, _ := t.(*object.Integer)
-		if int(member.Value) > len(arr.Elements) - 1 {
-			return newError("Evaluator(%d): value of index %s is not founded", node.GetLine(), t.Visit())
-		}
-		if member.Value < 0 {
-			return newError("Evaluator(%d): negative index values in not allowed '%s'", node.GetLine(), t.Visit())
-		}
-		return arr.Elements[member.Value]
+		return &object.String{Value: string(ret)}
 	}
 	return newError("Evaluator(%d): cannot access object<%s> with %v", node.GetLine(), t.Type(), node.Target.Stringify())
 }
