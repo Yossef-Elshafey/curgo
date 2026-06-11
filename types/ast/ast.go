@@ -299,3 +299,18 @@ func (pe *PrefixExpression) Stringify() string {
 	return out.String()
 }
 func (pe *PrefixExpression) GetLine() int {return pe.Token.Line}
+
+type Boolean struct {
+	Token token.Token
+	Value bool
+}
+
+func (b *Boolean) iExpr()      {}
+
+func (b *Boolean) Stringify() string {
+	var out bytes.Buffer
+	out.WriteString(b.Token.Value)
+	return out.String()
+}
+
+func (b *Boolean) GetLine() int {return b.Token.Line}

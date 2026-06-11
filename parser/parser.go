@@ -83,6 +83,8 @@ func (p *Parser) initPrefix() {
 		p.prefixLookup = make(map[token.TokenKind]prefixParseFn)
 	}
 	p.registerPrefix(token.IDENTIFIER,  p.parseIdentifier)
+	p.registerPrefix(token.TRUE,        p.parseTrueFalse)
+	p.registerPrefix(token.FALSE,       p.parseTrueFalse)
 	p.registerPrefix(token.STRING,      p.parseStringLiteral)
 	p.registerPrefix(token.NUMBER,      p.parseNumberLiteral)
 	p.registerPrefix(token.LPAREN,      p.parseGroupedExpression)
@@ -561,4 +563,8 @@ func (p *Parser) parsePrefixExpression() ( ast.Expression, error ) {
 	}
 	expression.Right = exp
 	return expression, nil
+}
+
+func (p *Parser) parseTrueFalse() (ast.Expression, error) {
+	return &ast.Boolean{Token: p.currentToken, Value: p.curTokenIs(token.TRUE)}, nil
 }

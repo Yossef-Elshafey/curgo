@@ -109,6 +109,8 @@ func Eval(node ast.Node, env *object.Env) object.Object {
 			return right
 		}
 		return evalPrefixExpression(node.Operator, right)
+	case *ast.Boolean:
+		return nativeBooleanObject(node.Value)
 	}
 	return nil
 }
