@@ -376,16 +376,16 @@ func evalIndexing(node *ast.Indexing, env *object.Env) object.Object {
 				return newError("Evaluator(%d): value of %s is not founded", node.GetLine(), t.Visit())
 			}
 			return ret
-	case *object.String:
-		member, ok := t.(*object.Integer)
-		if !ok {
-			return newError("Evaluator(%d): cannot access string with index datatype of %s", t.Type())
-		}
-		ret := v.Value[member.Value]
-		if !ok {
-			return newError("Evaluator(%d): value of %s is not founded", node.GetLine(), t.Visit())
-		}
-		return &object.String{Value: string(ret)}
+		case *object.String:
+			member, ok := t.(*object.Integer)
+			if !ok {
+				return newError("Evaluator(%d): cannot access string with index datatype of %s", t.Type())
+			}
+			ret := v.Value[member.Value]
+			if !ok {
+				return newError("Evaluator(%d): value of %s is not founded", node.GetLine(), t.Visit())
+			}
+			return &object.String{Value: string(ret)}
 	}
 	return newError("Evaluator(%d): cannot access object<%s> with %v", node.GetLine(), t.Type(), node.Target.Stringify())
 }
