@@ -26,10 +26,10 @@ jobs:
       run: go mod download
 
     - name: Run Evaluator Tests
-      run: go test -v ../../eval/
+      run: go test -v ./eval/
 
     - name: Run Lexer Tests
-      run: go test -v ../../lexer/
+      run: go test -v ./lexer/
 
     - name: Run Parser Tests
-      run: go test -v ../../parser/
+      run: go test -v ./parser/
