@@ -1,0 +1,35 @@
+name: Curgo Tests
+
+on:
+  push:
+    branches:
+    - main
+  pull_request:
+    branches:
+    - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Check out the code
+      uses: actions/checkout@v2
+
+    - name: Set up Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: '1.24.4'
+        cache: true
+
+    - name: Install dependencies
+      run: go mod download
+
+    - name: Run Evaluator Tests
+      run: go test -v ../../eval/
+
+    - name: Run Lexer Tests
+      run: go test -v ../../lexer/
+
+    - name: Run Parser Tests
+      run: go test -v ../../parser/
