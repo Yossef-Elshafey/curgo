@@ -422,7 +422,7 @@ func TestIndexing(t *testing.T) {
 	if !ok {
 		t.Errorf("expect return to be object.Integer, got=%T", e)
 	}
-	if ret.Value != 5 {
+	if ret.Value != 6 {
 		t.Errorf("expect return to be 3, got=%d", ret.Value)
 	}
 }

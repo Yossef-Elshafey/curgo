@@ -44,7 +44,7 @@ func run() {
 	// listTranspiler := flag.Bool("ls", false, "list all transpilation options")
 	// flag.Parse()
 
-	interp("./examples/02.txt")
+	interp("./examples/true,false.txt")
 	// if *file != "" {
 	// }
 
