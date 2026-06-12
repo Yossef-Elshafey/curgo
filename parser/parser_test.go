@@ -129,7 +129,7 @@ func TestMemberAccess(t *testing.T) {
 	if !ok {
 		t.Errorf("expect program.Statements[0] to exprStatement, got= %T", program.Statements[0])
 	}
-	rightExpr := expr.Expression.(*ast.SuffixExpression).Member
+	rightExpr := expr.Expression.(*ast.SuffixExpression).Right.Member
 	testIdentifier(t, rightExpr,"c")
 	leftExpr := expr.Expression.(*ast.SuffixExpression).Left
 	testMemberAccess(t, leftExpr, "a", ".", "b")
@@ -286,7 +286,7 @@ func testMemberAccess(
 		return false
 	}
 
-	if !testIdentifier(t, maExpr.Member, rhs) {
+	if !testIdentifier(t, maExpr.Right.Member, rhs) {
 		return false
 	}
 

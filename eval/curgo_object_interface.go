@@ -7,6 +7,7 @@ import (
 	"io"
 )
 
+// works with ast.SuffixExpression
 func expectArgsCount(valid bool) object.Object {
 	if !valid {
 		return newError("invalid number of arguments")
@@ -46,7 +47,7 @@ func expectContextInterface(left *object.ExpectContext, rhsOpts ast.RightOpts) o
 			}
 			evaluated, failed := left.ToBe(args[0])
 			if failed != nil {
-				return newError(failed.Error())
+				return newError(failed.Error(), "")
 			}
 			return evaluated
 		}

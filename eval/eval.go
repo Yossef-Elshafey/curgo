@@ -186,7 +186,7 @@ func evalMemberAccessExpr(left object.Object, rhsOpts ast.RightOpts) object.Obje
 	case *object.Response:
 		return responseInterface(left,rhsOpts)
 	}
-	return newError("%s doesnt support current option '%s'", left.Type(), rhsOpts)
+	return newError("%s doesnt support current option '%s'", left.Type(), rhsOpts.Member.Value)
 }
 
 func evalStringInfixExpression(
@@ -359,7 +359,7 @@ func evalIndexing(node *ast.Indexing, env *object.Env) object.Object {
 		case *object.Map:
 			member, ok := t.(*object.String)
 			if !ok {
-				return newError("Evaluator(%d): cannot access map with index datatype of %s", t.Type())
+				return newError("Evaluator(%d): cannot access map with index datatype of %s",node.GetLine(), t.Type())
 			}
 			ret, ok := v.Elements[member.Value]
 			if !ok {
@@ -369,7 +369,10 @@ func evalIndexing(node *ast.Indexing, env *object.Env) object.Object {
 		case *object.Array:
 			member, ok := t.(*object.Integer)
 			if !ok {
-				return newError("Evaluator(%d): cannot access array with index datatype of %s", t.Type())
+				return newError("Evaluator(%d): cannot access array with index datatype of %s", node.GetLine(), t.Type())
+			}
+			if int(member.Value) >= len(v.Elements) || int(member.Value) < 0 {
+				return newError("Evaluator(%d): index %d is out of bound", node.GetLine(), member.Value)
 			}
 			ret := v.Elements[member.Value]
 			if !ok {
@@ -379,7 +382,7 @@ func evalIndexing(node *ast.Indexing, env *object.Env) object.Object {
 		case *object.String:
 			member, ok := t.(*object.Integer)
 			if !ok {
-				return newError("Evaluator(%d): cannot access string with index datatype of %s", t.Type())
+				return newError("Evaluator(%d): cannot access string with index datatype of %s", node.GetLine(), t.Type())
 			}
 			ret := v.Value[member.Value]
 			if !ok {
